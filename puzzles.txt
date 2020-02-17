@@ -20,3 +20,63 @@ cut_of_mutton.n.01, filet_mignon.n.01, scrag.n.03, breast_of_lamb.n.01, sense_or
 
 corona_discharge.n.01, superconductivity.n.01, flashover.n.01, brush_discharge.n.01, white_pine.n.02, 
 
+o.n.03, cholecystokinin.n.01, luteinizing_hormone.n.01, anabolic_steroid.n.01, table_tipping.n.01, 
+
+visual_range.n.01, predomination.n.02, blatancy.n.01, conspicuousness.n.02, collinsonia.n.01, 
+
+quadraphony.n.01, walkman.n.01, hi-fi.n.01, stereo.n.01, capital_expenditure.n.01, 
+
+crescent_roll.n.01, nan.n.04, zwieback.n.01, pretzel.n.01, sapling.n.01, 
+
+operculum.n.01, lamina_arcus_vertebrae.n.01, lamina.n.01, frill.n.01, genus_physa.n.01, 
+
+colter.n.01, quoin.n.01, shim.n.01, plowshare.n.01, shaping.n.01, 
+
+surgical_contraception.n.01, oral_contraception.n.01, coitus_interruptus.n.01, natural_family_planning.n.01, switchman.n.01, 
+
+asilidae.n.01, cicadidae.n.01, ceratopogonidae.n.01, dactylopiidae.n.01, arnoseris.n.01, 
+
+coalescence.n.01, homecoming.n.01, tribalization.n.01, reunion.n.02, paw.n.01, 
+
+fire_pit.n.01, sawpit.n.01, sandpit.n.01, barbecue_pit.n.01, steam_chest.n.01, 
+
+jean.n.01, levi's.n.01, cords.n.01, salwar.n.01, inch.n.01, 
+
+incendiary_bomb.n.01, gas_shell.n.01, cruise_missile.n.01, shoe_bomb.n.01, mountain_peak.n.01, 
+
+reorganization.n.01, line_management.n.01, administrivia.n.01, polity.n.03, cordite.n.01, 
+
+preterist.n.01, church_father.n.01, futurist.n.01, eschatologist.n.01, chili_sauce.n.01, 
+
+one-hitter.n.01, rounders.n.01, ball.n.11, three-hitter.n.01, agent.n.05, 
+
+toothpick.n.01, louver.n.01, spline.n.01, picket.n.05, scarlet_clematis.n.01, 
+
+redhorse.n.01, sucker.n.07, buffalo_fish.n.01, hog_sucker.n.01, mouthbreeder.n.01, 
+
+affinity.n.02, consanguinity.n.01, affinity.n.03, parentage.n.02, genlisea.n.01, 
+
+asphalt.n.01, blacktop.n.01, concrete.n.01, reinforced_concrete.n.01, fringe_tree.n.01, 
+
+small-leaved_linden.n.01, japanese_linden.n.01, american_basswood.n.01, white_basswood.n.01, parturition.n.01, 
+
+field_brome.n.01, japanese_brome.n.01, chess.n.01, awnless_bromegrass.n.01, taret_organ.n.01, 
+
+checkmate.n.01, takedown.n.01, runaway.n.01, win.n.01, postcentral_gyrus.n.01, 
+
+a_cappella_singing.n.01, bowing.n.02, crooning.n.02, double_stopping.n.01, apology.n.03, 
+
+real_gross_national_product.n.01, monetary_value.n.01, inconsequence.n.01, inessentiality.n.01, television_camera.n.01, 
+
+spread.n.10, dispersion.n.03, decentralization.n.02, recirculation.n.01, phoebe.n.03, 
+
+pillar.n.01, yin.n.01, pillar_of_islam.n.01, principle.n.01, cochineal.n.01, 
+
+barred_owl.n.01, great_grey_owl.n.01, hoot_owl.n.01, great_horned_owl.n.01, young_buck.n.01, 
+
+crush.n.02, drove.n.02, traffic_jam.n.01, phalanx.n.02, mind.n.01, 
+
+walkman.n.01, reproducer.n.01, ipod.n.01, recording_system.n.01, sahib.n.01, 
+
+cussedness.n.01, stubbornness.n.01, prankishness.n.01, obstreperousness.n.01, scale.n.08, 
+
