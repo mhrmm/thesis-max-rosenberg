@@ -106,18 +106,10 @@ def create_puzzle_given_root(root):
         random_word = random.sample(hyps, 1)
         puzzle.append(random_word[0])
         i += 1
-    #generate fifth word
+    #generate fifth word from root odd_word_root
     odd_word_root = wn.synset('entity.n.01')
     odd_word_hyps = get_all_hyponyms_from_sense(odd_word_root)
-    wanted_spec = specificity.evaluate(puzzle[0])
     random_word = random.sample(odd_word_hyps, 1)[0]
-    curr_spec = specificity.evaluate(random_word)
-    #specificity bound of 50
-    spec_bound = 50
-    while abs(wanted_spec - curr_spec) > spec_bound:
-        print(random_word, wanted_spec, curr_spec)
-        random_word = random.sample(odd_word_hyps, 1)[0]
-        curr_spec = specificity.evaluate(random_word)
     puzzle.append(random_word)
     return puzzle
 
@@ -144,13 +136,13 @@ def create_random_puzzle():
 
 def generate_puzzles():
 #    roots = [wn.synset('person.n.01'),
-#             wn.synset('dog.n.01'),
-#             wn.synset('vehicle.n.01'),
-#             wn.synset('fruit.n.01'),
-#             wn.synset('bird.n.01'),
-#             wn.synset('furniture.n.01'),
-#             wn.synset('chromatic_color.n.01')]
-    
+#         wn.synset('dog.n.01'),
+#         wn.synset('vehicle.n.01'),
+#         wn.synset('fruit.n.01'),
+#         wn.synset('bird.n.01'),
+#         wn.synset('furniture.n.01'),
+#         wn.synset('chromatic_color.n.01')]
+
     puzzles = []
     i = 0
     number_of_puzzles = 10
@@ -174,7 +166,7 @@ def generate_puzzles():
 def show_puzzles(puzzles):
     score = 0
     num_puzzles_seen = 0
-    lives = 3
+    lives = 100
     #"puzzle" variableis unshuffled, answer is always at puzzle[4] 
     for puzzle in puzzles:
         num_puzzles_seen += 1 
