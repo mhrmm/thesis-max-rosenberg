@@ -80,3 +80,63 @@ walkman.n.01, reproducer.n.01, ipod.n.01, recording_system.n.01, sahib.n.01,
 
 cussedness.n.01, stubbornness.n.01, prankishness.n.01, obstreperousness.n.01, scale.n.08, 
 
+identity.n.02, mind.n.02, working_memory.n.01, motor_memory.n.01, law.n.02, 
+
+prologue.n.01, spot.n.06, reserve_clause.n.01, recapitulation.n.02, psychoanalysis.n.01, 
+
+take-home_pay.n.01, strike_pay.n.01, found.n.01, half-pay.n.01, tropaeolaceae.n.01, 
+
+long-billed_marsh_wren.n.01, carolina_wren.n.01, marsh_wren.n.01, winter_wren.n.01, equidistribution.n.01, 
+
+eudemonism.n.01, casuistry.n.02, hedonism.n.02, bioethics.n.01, ara.n.02, 
+
+day.n.02, space_age.n.01, while.n.01, snap.n.02, blood_vessel.n.01, 
+
+low-warp-loom.n.01, sewing_machine.n.01, loom.n.01, willow.n.02, hen.n.01, 
+
+eastern_fence_lizard.n.01, side-blotched_lizard.n.01, fence_lizard.n.01, spiny_lizard.n.02, tyrothricin.n.01, 
+
+luger.n.01, very_pistol.n.01, saturday_night_special.n.01, horse_pistol.n.01, cultist.n.02, 
+
+phacoemulsification.n.01, extracapsular_surgery.n.01, intracapsular_surgery.n.01, cataract_surgery.n.01, christmas.n.01, 
+
+split_infinitive.n.01, doubly_transitive_verb.n.01, participle.n.01, adverb.n.01, stinger.n.05, 
+
+common_bean.n.01, wax_bean.n.01, kidney_bean.n.01, green_bean.n.02, rhizoctinia_disease.n.01, 
+
+symphysion.n.01, gonion.n.01, lambda.n.02, dacryon.n.01, madia.n.01, 
+
+american_beech.n.01, copper_beech.n.01, common_beech.n.01, weeping_beech.n.01, beta_cell.n.01, 
+
+cow_pasture.n.01, silva.n.01, riparian_forest.n.01, bent.n.03, malaria.n.01, 
+
+sordidness.n.01, dinginess.n.01, dustiness.n.01, smuttiness.n.01, untidiness.n.01, 
+
+longways.n.01, stage_dancing.n.01, skank.n.02, waltz.n.03, fraise.n.02, 
+
+personal_computer.n.01, von_neumann_machine.n.01, mainframe.n.01, non-dedicated_file_server.n.01, chock.n.01, 
+
+water_chute.n.01, gutter.n.01, limbers.n.01, chute.n.02, foundry.n.01, 
+
+hammer_throw.n.01, tennis_match.n.01, javelin.n.01, shot_put.n.01, bondman.n.01, 
+
+sunken_garden.n.01, tea_garden.n.01, peach_orchard.n.01, topiary.n.01, aeonium.n.01, 
+
+support.n.03, anchor.n.02, temptation.n.01, pestilence.n.03, jacket.n.01, 
+
+transfer.n.04, round-trip_ticket.n.01, theater_ticket.n.01, plane_ticket.n.01, yodel.n.01, 
+
+saltine.n.01, oyster_cracker.n.01, soda_cracker.n.01, soft_pretzel.n.01, chronic_gastritis.n.01, 
+
+common_wallaby.n.01, hare_wallaby.n.01, nail-tailed_wallaby.n.01, rock_wallaby.n.01, decimation.n.01, 
+
+trend_line.n.01, contour.n.01, graduation.n.03, bar_line.n.01, light_adaptation.n.01, 
+
+nickel.n.03, silver_certificate.n.01, dollar.n.02, hundred_dollar_bill.n.01, variable.n.04, 
+
+rumba.n.02, two-step.n.01, tarantella.n.02, polka.n.02, volume.n.06, 
+
+telecast.n.01, rebroadcast.n.01, radio_news.n.01, simulcast.n.01, sorus.n.01, 
+
+trial_balloon.n.01, alpha_test.n.01, fishing_expedition.n.01, test_drive.n.01, lombardy_poplar.n.01, 
+
