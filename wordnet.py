@@ -86,80 +86,64 @@ def find_lowest_common_ancestor(words):
     sortedHypernyms = sorted(scoredHypernyms)
     return sortedHypernyms[0]
 
-def get_random_word():
-    entity = wn.synset('entity.n.01')
-    entity_hyps = get_all_hyponyms_from_sense(entity)
-    random_word = random.sample(entity_hyps,1)[0]
-    return random_word
+class GetRandomSynset:
+    def __init__(self):
+        entity = wn.synset('entity.n.01')
+        self.entity_hyps = get_all_hyponyms_from_sense(entity)
 
-#takes a single non-leaf word as input and produces puzzle based on this category
-def create_puzzle_given_root(root):
-    root_spec =  specificity.evaluate(root)
-    print("CREATING PUZZLE WITH ", root, " AS ROOT WHICH HAS SPEC ", root_spec)
-    #first 4 words are hyponyms of root, 5th is totally random
-    puzzle = []
-    i = 0
-    number_of_words = 5
-    #generate first 4 related words of puzzle
-    while i < (number_of_words - 1):
-        hyps = get_all_hyponyms_from_sense(root)
-        random_word = random.sample(hyps, 1)
-        puzzle.append(random_word[0])
-        i += 1
-    #generate fifth word from root odd_word_root
-    odd_word_root = wn.synset('entity.n.01')
-    odd_word_hyps = get_all_hyponyms_from_sense(odd_word_root)
-    random_word = random.sample(odd_word_hyps, 1)[0]
-    puzzle.append(random_word)
-    return puzzle
+    def __call__(self):
+        random_word = random.sample(self.entity_hyps,1)[0]
+        return random_word
+        
+
+get_random_synset = GetRandomSynset()
+
+def random_synset_with_specificity(lower, upper):
+    root = get_random_synset()
+    root_spec = specificity.evaluate(root)
+    while ((root_spec < lower) or (root_spec > upper)):
+        root = get_random_synset()
+        root_spec = specificity.evaluate(root)
+    return root
+
+def random_non_hyponym(synset):
+    while True:
+        result = get_random_synset()
+        if synset not in get_all_hypernyms_from_sense(result):
+            return result
+
 
 #Creates puzzle with random rootword between spec val of 5 and 1000
 def create_random_puzzle():
-    root = get_random_word()
+    root = random_synset_with_specificity(5, 1000)
     root_spec = specificity.evaluate(root)
-    while ((root_spec < 5) or (root_spec > 1000)):
-        root = get_random_word()
-        root_spec = specificity.evaluate(root)
     print("CREATING PUZZLE WITH ", root, " AS ROOT WHICH HAS SPEC ", root_spec)
     #first 4 words are hyponyms of root, 5th is totally random
-    hyps = get_all_hyponyms_from_sense(root)
+    hyps = get_all_hyponyms_from_sense(root) # children?
     puzzle = random.sample(hyps, 4)
 
     
     #generate fifth word
-    odd_word_root = wn.synset('entity.n.01')
-    odd_word_hyps = get_all_hyponyms_from_sense(odd_word_root)
-    random_word = random.sample(odd_word_hyps, 1)[0]
-    #specificity bound of 50
+    random_word = random_non_hyponym(root)
     puzzle.append(random_word)
     return puzzle
 
-def generate_puzzles():
-#    roots = [wn.synset('person.n.01'),
-#         wn.synset('dog.n.01'),
-#         wn.synset('vehicle.n.01'),
-#         wn.synset('fruit.n.01'),
-#         wn.synset('bird.n.01'),
-#         wn.synset('furniture.n.01'),
-#         wn.synset('chromatic_color.n.01')]
-
+def generate_puzzles(number_of_puzzles = 10, output_file = 'puzzles.txt'):
     puzzles = []
     i = 0
-    number_of_puzzles = 10
     while i < number_of_puzzles:
         new_puzzle = create_random_puzzle()
         puzzles.append(new_puzzle)
         i += 1
         print(new_puzzle)
     #Write to file
-    f = open("puzzles.txt", "a+")
-    for puzzle in puzzles:
-        for word in puzzle:
-            f.write(word.name())
-            f.write(", ")
-        f.write("\n")
-        f.write("\n")
-    f.close()
+    with open(output_file, "w") as f:
+        for puzzle in puzzles:
+            for word in puzzle:
+                f.write(word.name())
+                f.write(", ")
+            f.write("\n")
+            f.write("\n")
     return puzzles
 
 
