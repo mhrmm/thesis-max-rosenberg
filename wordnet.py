@@ -55,6 +55,14 @@ def get_all_hyponyms_from_sense(sense):
             result.add(z)
     return result
 
+def get_all_lemmas_from_sense(sense):
+    result = set()
+    for y in get_all_hyponyms_from_sense(sense):
+        for lemma in y.lemmas():
+            result.add(lemma.name())
+    return result
+
+
 
 class Specificity:
     def __init__(self):
@@ -87,64 +95,60 @@ def find_lowest_common_ancestor(words):
     return sortedHypernyms[0]
 
 class GetRandomSynset:
-    def __init__(self):
-        entity = wn.synset('entity.n.01')
+    def __init__(self, root_synset = 'dog.n.1'):
+        entity = wn.synset(root_synset)
         self.entity_hyps = get_all_hyponyms_from_sense(entity)
 
     def __call__(self):
         random_word = random.sample(self.entity_hyps,1)[0]
         return random_word
-        
-
-get_random_synset = GetRandomSynset()
-
-def random_synset_with_specificity(lower, upper):
-    root = get_random_synset()
-    root_spec = specificity.evaluate(root)
-    while ((root_spec < lower) or (root_spec > upper)):
-        root = get_random_synset()
-        root_spec = specificity.evaluate(root)
-    return root
-
-def random_non_hyponym(synset):
-    while True:
-        result = get_random_synset()
-        if synset not in get_all_hypernyms_from_sense(result):
-            return result
-
-
-#Creates puzzle with random rootword between spec val of 5 and 1000
-def create_random_puzzle():
-    root = random_synset_with_specificity(5, 1000)
-    root_spec = specificity.evaluate(root)
-    print("CREATING PUZZLE WITH ", root, " AS ROOT WHICH HAS SPEC ", root_spec)
-    #first 4 words are hyponyms of root, 5th is totally random
-    hyps = get_all_hyponyms_from_sense(root) # children?
-    puzzle = random.sample(hyps, 4)
-
     
-    #generate fifth word
-    random_word = random_non_hyponym(root)
-    puzzle.append(random_word)
-    return puzzle
+    @staticmethod    
+    def factory(root_synset):
+        return GetRandomSynset(root_synset)
+    
 
-def generate_puzzles(number_of_puzzles = 10, output_file = 'puzzles.txt'):
-    puzzles = []
-    i = 0
-    while i < number_of_puzzles:
-        new_puzzle = create_random_puzzle()
-        puzzles.append(new_puzzle)
-        i += 1
-        print(new_puzzle)
-    #Write to file
-    with open(output_file, "w") as f:
-        for puzzle in puzzles:
-            for word in puzzle:
-                f.write(word.name())
-                f.write(", ")
-            f.write("\n")
-            f.write("\n")
-    return puzzles
+    def random_synset_with_specificity(self, lower, upper):
+        root = self()
+        root_spec = specificity.evaluate(root)
+        while ((root_spec < lower) or (root_spec > upper)):
+            root = self()
+            root_spec = specificity.evaluate(root)
+        return root
+
+    def random_non_hyponym(self, synset):
+        while True:
+            result = self()
+            if synset not in get_all_hypernyms_from_sense(result):
+                return result
+
+    #Creates puzzle with random rootword between spec val of 5 and 1000
+    def create_random_puzzle(self):
+        root = self.random_synset_with_specificity(5, 1000)
+        hyps = get_all_hyponyms_from_sense(root) # children?
+        puzzle = random.sample(hyps, 4)
+        random_word = self.random_non_hyponym(root)
+        puzzle.append(random_word)
+        return [random.choice(s.lemmas()).name() for s in puzzle]
+
+    def generate_puzzles(self, number_of_puzzles = 10, output_file = 'puzzles.txt'):
+        puzzles = []
+        i = 0
+        while i < number_of_puzzles:
+            new_puzzle = self.create_random_puzzle()
+            puzzles.append(new_puzzle)
+            i += 1
+            print(new_puzzle)
+        #Write to file
+        with open(output_file, "w") as f:
+            for puzzle in puzzles:
+                for word in puzzle:
+                    f.write(word.name())
+                    f.write(", ")
+                f.write("\n")
+                f.write("\n")
+        return puzzles
+
 
 
 def show_puzzles(puzzles):
@@ -183,7 +187,8 @@ def show_puzzles(puzzles):
 
 
 if __name__ == "__main__":
-    test_puzzles = generate_puzzles()   
+    generate_synset = GetRandomSynset('dog.n.1')
+    test_puzzles = generate_synset.generate_puzzles()   
     show_puzzles(test_puzzles)
     
     
