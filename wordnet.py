@@ -98,6 +98,10 @@ class GetRandomSynset:
     def __init__(self, root_synset = 'dog.n.1'):
         entity = wn.synset(root_synset)
         self.entity_hyps = get_all_hyponyms_from_sense(entity)
+        specificity = Specificity()
+        self.specificities = {hyponym: specificity.evaluate(hyponym) for 
+                              hyponym in self.entity_hyps}
+        
 
     def __call__(self):
         random_word = random.sample(self.entity_hyps,1)[0]
@@ -109,12 +113,14 @@ class GetRandomSynset:
     
 
     def random_synset_with_specificity(self, lower, upper):
-        root = self()
-        root_spec = specificity.evaluate(root)
-        while ((root_spec < lower) or (root_spec > upper)):
-            root = self()
-            root_spec = specificity.evaluate(root)
-        return root
+        candidates = [hyp for hyp in self.specificities if 
+                      self.specificities[hyp] >=lower and
+                      self.specificities[hyp] <= upper]
+        print(len(candidates))
+        if len(candidates) > 0:
+            return random.choice(candidates)
+        else:
+            return None
 
     def random_non_hyponym(self, synset):
         while True:
@@ -138,15 +144,6 @@ class GetRandomSynset:
             new_puzzle = self.create_random_puzzle()
             puzzles.append(new_puzzle)
             i += 1
-            print(new_puzzle)
-        #Write to file
-#        with open(output_file, "w") as f:
-#            for puzzle in puzzles:
-#                for word in puzzle:
-#                    f.write(word.name())
-#                    f.write(", ")
-#                f.write("\n")
-#                f.write("\n")
         return puzzles
 
 
