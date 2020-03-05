@@ -15,7 +15,7 @@ parameters = {
         'base': 10,
         'hiddenLayerSize': 300,
         'optimizer': 'adam',
-        'trainingDataSize': 16000
+        'trainingDataSize': 10000
         }
 
 class TrainingParameters:
@@ -183,6 +183,6 @@ def run(params, puzzle_gen):
     
     
 model = run(TrainingParameters(parameters), 
-            WordnetPuzzleGenerator('vehicle.n.1'))
+            WordnetPuzzleGenerator('cat.n.1'))
 
 
