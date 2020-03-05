@@ -131,7 +131,7 @@ class GetRandomSynset:
         puzzle.append(random_word)
         return [random.choice(s.lemmas()).name() for s in puzzle]
 
-    def generate_puzzles(self, number_of_puzzles = 10, output_file = 'puzzles.txt'):
+    def generate_puzzles(self, number_of_puzzles = 10):
         puzzles = []
         i = 0
         while i < number_of_puzzles:
@@ -140,13 +140,13 @@ class GetRandomSynset:
             i += 1
             print(new_puzzle)
         #Write to file
-        with open(output_file, "w") as f:
-            for puzzle in puzzles:
-                for word in puzzle:
-                    f.write(word.name())
-                    f.write(", ")
-                f.write("\n")
-                f.write("\n")
+#        with open(output_file, "w") as f:
+#            for puzzle in puzzles:
+#                for word in puzzle:
+#                    f.write(word.name())
+#                    f.write(", ")
+#                f.write("\n")
+#                f.write("\n")
         return puzzles
 
 
@@ -189,6 +189,7 @@ def show_puzzles(puzzles):
 if __name__ == "__main__":
     generate_synset = GetRandomSynset('dog.n.1')
     test_puzzles = generate_synset.generate_puzzles()   
-    show_puzzles(test_puzzles)
+#    show_puzzles(test_puzzles)
+    print(len(test_puzzles))
     
     
