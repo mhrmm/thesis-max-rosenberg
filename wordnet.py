@@ -116,7 +116,6 @@ class GetRandomSynset:
         candidates = [hyp for hyp in self.specificities if 
                       self.specificities[hyp] >=lower and
                       self.specificities[hyp] <= upper]
-        print(len(candidates))
         if len(candidates) > 0:
             return random.choice(candidates)
         else:
@@ -128,23 +127,6 @@ class GetRandomSynset:
             if synset not in get_all_hypernyms_from_sense(result):
                 return result
 
-    #Creates puzzle with random rootword between spec val of 5 and 1000
-    def create_random_puzzle(self):
-        root = self.random_synset_with_specificity(5, 1000)
-        hyps = get_all_hyponyms_from_sense(root) # children?
-        puzzle = random.sample(hyps, 4)
-        random_word = self.random_non_hyponym(root)
-        puzzle.append(random_word)
-        return [random.choice(s.lemmas()).name() for s in puzzle]
-
-    def generate_puzzles(self, number_of_puzzles = 10):
-        puzzles = []
-        i = 0
-        while i < number_of_puzzles:
-            new_puzzle = self.create_random_puzzle()
-            puzzles.append(new_puzzle)
-            i += 1
-        return puzzles
 
 
 
