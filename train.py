@@ -15,7 +15,7 @@ parameters = {
         'base': 10,
         'hiddenLayerSize': 300,
         'optimizer': 'adam',
-        'trainingDataSize': 10000
+        'trainingDataSize': 20000
         }
 
 class TrainingParameters:
@@ -88,15 +88,6 @@ def makePuzzleTarget(label):
 def makePuzzleTargets(labels):
     return LongTensor(labels)    
 
-def buildVocab(puzzles):
-    word_to_ix = {}
-    for choices, _ in puzzles:
-        for word in choices:
-            if word not in word_to_ix:
-                word_to_ix[word] = len(word_to_ix)
-    print("vocab size: {}".format(len(word_to_ix)))
-    return word_to_ix
-
 
 
     
@@ -111,11 +102,10 @@ class Trainer:
         self.num_choices = params.getNumChoices()
         self.optimizerFactory = params.getOptimizerFactory()
         self.batch_size = params.getBatchSize()
-        self.generateData()
 
 
-    def generateData(self):
-        self.data = set(self.generator.getTrainingData(self.training_data_size))
+    def generate_data(self):
+        self.data = set(self.generator.batch_generate(self.training_data_size))
         self.test_data = set()
         while len(self.test_data) < self.test_data_size:
             puzzle = self.generator.generate()
@@ -123,24 +113,24 @@ class Trainer:
                 self.test_data.add(puzzle)
         self.data = list(self.data)
         self.test_data = list(self.test_data)
-        self.vocab = buildVocab(self.data + self.test_data)
 
             
 
-
     def run(self):
-        model = DropoutClassifier(self.vocab,
-                                   self.num_choices, 
-                                   self.hidden_layer_size)
+        model = DropoutClassifier(self.generator.get_vocab(),
+                                  self.num_choices, 
+                                  self.hidden_layer_size)
         cudaify(model)
-        return self.batchTrain(model)
+        return self.batch_train(model)
         
 
-    def batchTrain(self, model):
+    def batch_train(self, model):
         loss_function = nn.NLLLoss()
         batch_size = self.batch_size
         optimizer = self.optimizerFactory(model.parameters())
         for epoch in range(self.num_training_epochs):
+            if epoch % 100 == 0:
+                self.generate_data()
             model.train()
             model.zero_grad()
             batch = random.sample(self.data, batch_size)
@@ -181,8 +171,8 @@ def run(params, puzzle_gen):
     print('test accuracy = {}'.format(trainer.evaluate(model, trainer.test_data)))        
     return model
     
-    
+print('hi')
 model = run(TrainingParameters(parameters), 
-            WordnetPuzzleGenerator('cat.n.1'))
+            WordnetPuzzleGenerator('vehicle.n.1'))
 
 
