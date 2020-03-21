@@ -1,45 +1,27 @@
 from torch import nn
 import torch.nn.functional as F
-
-class TwoLayerClassifier(nn.Module): 
-
-    def __init__(self, vocab, num_labels, hidden_size):
-        super(TwoLayerClassifier, self).__init__()
-        self.vocab = vocab
-        self.num_labels = num_labels
-        input_size = num_labels * len(vocab)
-        self.hidden_size = hidden_size
-        self.linear1 = nn.Linear(input_size, hidden_size)
-        self.linear2 = nn.Linear(hidden_size, num_labels)
-
-    def forward(self, input_vec):
-        nextout = self.linear1(input_vec).clamp(min=0)
-        nextout = self.linear2(nextout)
-        return F.log_softmax(nextout, dim=1)
-
+from cuda import cudaify
 
 class DropoutClassifier(nn.Module): 
 
-    def __init__(self, vocab, num_labels, hidden_size):
+    def __init__(self, vocab, num_labels, hidden_size, num_layers = 3):
         super(DropoutClassifier, self).__init__()
+        error_msg = "Cannot initialize DropoutClassifier with num_layers={}".format(num_layers)
+        assert num_layers >= 2, error_msg
         self.vocab = vocab
         self.num_labels = num_labels
         input_size = num_labels * len(vocab)
         self.hidden_size = hidden_size
-        self.dropout1 = nn.Dropout(p=0.2)
         self.linear1 = nn.Linear(input_size, hidden_size)
-        self.dropout2 = nn.Dropout(p=0.5)
-        self.linear2 = nn.Linear(hidden_size, hidden_size)
-        self.dropout3 = nn.Dropout(p=0.5)
+        self.middle_layers = [cudaify(nn.Linear(hidden_size, hidden_size)) for
+                              i in range(num_layers - 2)]
         self.linear3 = nn.Linear(hidden_size, num_labels)
 
     def forward(self, input_vec):
         nextout = input_vec
-        nextout = self.dropout1(nextout)
         nextout = self.linear1(nextout).clamp(min=0)
-        nextout = self.dropout2(nextout)    
-        nextout = self.linear2(nextout)
-        nextout = self.dropout3(nextout)    
+        for layer in self.middle_layers:
+            nextout = layer(nextout).clamp(min=0)
         nextout = self.linear3(nextout)
         return F.log_softmax(nextout, dim=1)
 

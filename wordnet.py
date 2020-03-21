@@ -55,11 +55,19 @@ def get_all_hyponyms_from_sense(sense):
             result.add(z)
     return result
 
+def normalize_lemma(lemma):
+    lemma = " ".join(lemma.split("_"))
+    lemma = " ".join(lemma.split("-"))
+    lemma = lemma.lower()
+    return lemma
+    #return "_".join(lemma.split())
+
+
 def get_all_lemmas_from_sense(sense):
     result = set()
     for y in get_all_hyponyms_from_sense(sense):
         for lemma in y.lemmas():
-            result.add(lemma.name())
+            result.add(normalize_lemma(lemma.name()))
     return result
 
 
@@ -70,7 +78,7 @@ class Specificity:
         
     def evaluate(self, sense):
         if sense.name() not in self.cache:
-            spec = len(get_all_hyponyms_from_sense(sense))
+            spec = len(get_all_lemmas_from_sense(sense))
             self.cache[sense.name()] = spec
         return self.cache[sense.name()]
 
@@ -126,7 +134,6 @@ class GetRandomSynset:
             result = self()
             if synset not in get_all_hypernyms_from_sense(result):
                 return result
-
 
 
 
