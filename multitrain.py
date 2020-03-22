@@ -138,10 +138,10 @@ def train(puzzle_generator, num_epochs, hidden_size,
         maybe_report_time()
     return best_model
 
-train(WordnetPuzzleGenerator('food.n.1'), 
+train(WordnetPuzzleGenerator('animal.n.1'), 
       num_epochs=30000, 
       hidden_size=300,
-      num_puzzles_to_generate=20000,
-      batch_size=1024,
+      num_puzzles_to_generate=2000,
+      batch_size=256,
       multigpu=False)
 

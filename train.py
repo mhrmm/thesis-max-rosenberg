@@ -16,7 +16,7 @@ parameters = {
         'num_epochs': 200000,
         'hidden_size': 300,
         'optimizer': 'adam',
-        'training_size': 20000
+        'training_size': 2000
         }
 
 class TrainingParameters:
@@ -47,15 +47,16 @@ class TrainingParameters:
 
 class PuzzleDataset(Dataset):
 
-    def __init__(self, size, length):
-        self.len = length
-        self.data = torch.randn(length, size)
+    def __init__(self, puzzles, vocab):
+        #self.puzzles = puzzles
+        self.evidence_matrix = make_puzzle_matrix(puzzles, vocab)
+        self.response_vector = make_puzzle_targets([label for (_, label) in puzzles])
 
     def __getitem__(self, index):
-        return self.data[index]
+        return self.evidence_matrix[index], self.response_vector[index]
 
     def __len__(self):
-        return self.len
+        return len(self.evidence_matrix)
     
 class Trainer:
     
@@ -78,6 +79,10 @@ class Trainer:
             if puzzle not in self.data:
                 self.test_data.add(puzzle)
         self.data = list(self.data)
+        self.dataset = PuzzleDataset(self.data, self.generator.get_vocab())
+        self.dataloader = DataLoader(dataset = self.dataset, 
+                                     batch_size = self.batch_size, 
+                                     shuffle=True)
         self.test_data = list(self.test_data)
 
             
@@ -86,13 +91,13 @@ class Trainer:
         model = DropoutClassifier(self.generator.get_vocab(),
                                   self.num_choices, 
                                   self.hidden_layer_size)
-        model = cudaify(model)
+        model = nn.DataParallel(model)
+        cudaify(model)
         return self.batch_train(model)
         
 
     def batch_train(self, model):
         loss_function = nn.NLLLoss()
-        batch_size = self.batch_size
         optimizer = self.optimizerFactory(model.parameters())
         best_model = None
         best_test_acc = -1.0
@@ -104,13 +109,14 @@ class Trainer:
                 print('done!')
             model.train()
             model.zero_grad()
-            batch = random.sample(self.data, batch_size)
-            input_matrix = make_puzzle_matrix(batch, model.vocab)
-            target = make_puzzle_targets([label for (_, label) in batch])
-            log_probs = model(input_matrix)
-            loss = loss_function(log_probs, target)
-            loss.backward()
-            optimizer.step()
+            for batch in self.dataloader:
+                input_matrix = cudaify(batch[0])
+                target = batch[1]
+                log_probs = model(input_matrix)
+                print("Outside: input size", input_matrix.size(), "output_size", log_probs.size())
+                loss = loss_function(log_probs, target)
+                loss.backward()
+                optimizer.step()
             if epoch % 100 == 0:
                 print('epoch {}'.format(epoch))
                 test_acc = self.evaluate(model, self.test_data)
@@ -151,6 +157,6 @@ def run(params, puzzle_gen):
     return model
     
 model = run(TrainingParameters(parameters), 
-            WordnetPuzzleGenerator('food.n.1'))
+            WordnetPuzzleGenerator('cat.n.1'))
 
 

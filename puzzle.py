@@ -36,11 +36,14 @@ class WordnetPuzzleGenerator(PuzzleGenerator):
     
     def generate(self):
         root = self.synset_gen.random_synset_with_specificity(10, 1000)
-        hyps = get_all_hyponyms_from_sense(root) # children?
+        while root == self.root_synset:
+            root = self.synset_gen.random_synset_with_specificity(10, 1000)
+        hyps = get_all_lemmas_from_sense(root) # children?
         puzzle = random.sample(hyps, 4)
-        random_word = self.synset_gen.random_non_hyponym(root)
+        random_hyp = self.synset_gen.random_non_hyponym(root)
+        random_word = random.choice(list(get_all_lemmas_from_sense(random_hyp)))
         puzzle.append(random_word)
-        (w1, w2, w3, w4, w5) = [normalize_lemma(random.choice(s.lemmas()).name()) for s in puzzle]
+        (w1, w2, w3, w4, w5) = puzzle#[normalize_lemma(random.choice(s.lemmas()).name()) for s in puzzle]
         result = [(str(w1), 0), (str(w2), 0), (str(w3), 0), 
                   (str(w4), 0), (str(w5), 1)]
         random.shuffle(result)
