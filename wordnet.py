@@ -65,6 +65,8 @@ def normalize_lemma(lemma):
 
 def get_all_lemmas_from_sense(sense):
     result = set()
+    for lemma in sense.lemmas():
+        result.add(normalize_lemma(lemma.name()))
     for y in get_all_hyponyms_from_sense(sense):
         for lemma in y.lemmas():
             result.add(normalize_lemma(lemma.name()))

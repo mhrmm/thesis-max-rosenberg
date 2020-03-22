@@ -2,7 +2,7 @@ import torch
 
 if torch.cuda.is_available():
     print("using gpu")
-    cuda = torch.device('cuda:2')
+    cuda = torch.device('cuda:0')
     FloatTensor = torch.cuda.FloatTensor
     LongTensor = torch.cuda.LongTensor
     def cudaify(model):
