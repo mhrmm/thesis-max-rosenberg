@@ -39,6 +39,46 @@ class PuzzleDataset(Dataset):
                                      shuffle=True)
         return dataloader
 
+
+class TiedClassifier(nn.Module): 
+
+    def __init__(self, input_size, num_labels, hidden_size):
+        super(TiedClassifier, self).__init__()
+        self.input_size = input_size
+        self.vocab_size = input_size // 5
+        self.hidden_size = hidden_size
+        self.linear1 = nn.Linear(self.vocab_size, hidden_size)
+        self.dropout = torch.nn.Dropout(p=0.2)
+        self.linear2 = nn.Linear(hidden_size, hidden_size)
+        self.linear3 = nn.Linear(5*hidden_size, hidden_size)
+        self.linear4 = nn.Linear(hidden_size, hidden_size)
+        self.linear5 = nn.Linear(hidden_size, num_labels)
+
+    def forward(self, input_vec):
+        t = input_vec
+        
+        output = self.linear1(t[:,0*self.vocab_size:1*self.vocab_size]).clamp(min=0)
+        output = self.dropout(output)
+        output1 = self.linear2(output).clamp(min=0)
+        output = self.linear1(t[:,1*self.vocab_size:2*self.vocab_size]).clamp(min=0)
+        output = self.dropout(output)
+        output2 = self.linear2(output).clamp(min=0)
+        output = self.linear1(t[:,2*self.vocab_size:3*self.vocab_size]).clamp(min=0)
+        output = self.dropout(output)
+        output3 = self.linear2(output).clamp(min=0)
+        output = self.linear1(t[:,3*self.vocab_size:4*self.vocab_size]).clamp(min=0)
+        output = self.dropout(output)
+        output4 = self.linear2(output).clamp(min=0)
+        output = self.linear1(t[:,4*self.vocab_size:5*self.vocab_size]).clamp(min=0)
+        output = self.dropout(output)
+        output5 = self.linear2(output).clamp(min=0)
+        nextout = torch.cat([output1, output2, output3, output4, output5], dim=1) 
+        nextout = self.linear3(nextout).clamp(min=0)
+        nextout = self.dropout(nextout)
+        nextout = self.linear4(nextout).clamp(min=0)
+        nextout = self.dropout(nextout)
+        nextout = self.linear5(nextout)
+        return F.log_softmax(nextout, dim=1)
      
 
 
@@ -48,14 +88,23 @@ class ThreeLayerClassifier(nn.Module):
         super(ThreeLayerClassifier, self).__init__()
         self.hidden_size = hidden_size
         self.linear1 = nn.Linear(input_size, hidden_size)
+        self.dropout = torch.nn.Dropout(p=0.2)
         self.linear2 = nn.Linear(hidden_size, hidden_size)
-        self.linear3 = nn.Linear(hidden_size, num_labels)
+        self.linear3 = nn.Linear(hidden_size, hidden_size)
+        self.linear4 = nn.Linear(hidden_size, hidden_size)
+        self.linear5 = nn.Linear(hidden_size, num_labels)
 
     def forward(self, input_vec):
         nextout = input_vec
         nextout = self.linear1(nextout).clamp(min=0)
+        nextout = self.dropout(nextout)
         nextout = self.linear2(nextout).clamp(min=0)
-        nextout = self.linear3(nextout)
+        nextout = self.dropout(nextout)
+        nextout = self.linear3(nextout).clamp(min=0)
+        nextout = self.dropout(nextout)
+        nextout = self.linear4(nextout).clamp(min=0)
+        nextout = self.dropout(nextout)
+        nextout = self.linear5(nextout)
         return F.log_softmax(nextout, dim=1)
 
 def evaluate(model, loader):
@@ -109,7 +158,8 @@ def train(puzzle_generator, num_epochs, hidden_size,
     start_time = time.clock()
     input_size = 5 * len(puzzle_generator.get_vocab())
     output_size = 5
-    model = ThreeLayerClassifier(input_size, output_size, hidden_size)
+    model = TiedClassifier(input_size, output_size, hidden_size)
+    #model = ThreeLayerClassifier(input_size, output_size, hidden_size)
     if multigpu and torch.cuda.device_count() > 1:
         print("Let's use", torch.cuda.device_count(), "GPUs!")
         #dim = 0 [30, xxx] -> [10, ...], [10, ...], [10, ...] on 3 GPUs
@@ -138,10 +188,10 @@ def train(puzzle_generator, num_epochs, hidden_size,
         maybe_report_time()
     return best_model
 
-train(WordnetPuzzleGenerator('animal.n.1'), 
-      num_epochs=30000, 
+train(WordnetPuzzleGenerator('entity.n.1'), 
+      num_epochs=300000, 
       hidden_size=300,
       num_puzzles_to_generate=2000,
-      batch_size=256,
+      batch_size=128,
       multigpu=False)
 
