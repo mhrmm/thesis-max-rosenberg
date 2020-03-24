@@ -5,7 +5,7 @@ import torch.optim as optim
 import torch.nn.functional as F
 from puzzle import make_puzzle_matrix, make_puzzle_targets, WordnetPuzzleGenerator
 import time
-
+from wordnet import hypernym_chain
 
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -123,7 +123,7 @@ def evaluate(model, loader):
                     correct += 1
     return correct / total
 
-def train(puzzle_generator, num_epochs, hidden_size, 
+def train(puzzle_generator, initial_root_synset, num_epochs, hidden_size, 
           num_puzzles_to_generate, batch_size, multigpu = False):
     def maybe_regenerate(puzzle_generator, epoch, prev_loader, prev_test_loader):
         if epoch % 100 == 0:
@@ -172,6 +172,7 @@ def train(puzzle_generator, num_epochs, hidden_size,
     optimizer = optim.Adam(model.parameters())
     best_model = None
     best_test_acc = -1.0
+    puzzle_generator.reset_root(initial_root_synset)
     for epoch in range(num_epochs):
         model.train()
         model.zero_grad()
@@ -185,10 +186,21 @@ def train(puzzle_generator, num_epochs, hidden_size,
             optimizer.step()
         best_model, best_test_acc = maybe_evaluate(model, epoch,
                                                    best_model, best_test_acc)
+        
+        if best_test_acc > .8 and initial_root_synset != 'entity.n.1':
+            current_root = initial_root_synset
+            initial_root_synset = hypernym_chain(initial_root_synset)[1].name()
+            puzzle_generator.reset_root(initial_root_synset)
+            print("Successful training of {}! Moving on to {}.".format(current_root, initial_root_synset))
+            best_test_acc = -1.0
+            loader, test_loader = maybe_regenerate(puzzle_generator, 100, 
+                                                   loader, test_loader)
+        
         maybe_report_time()
     return best_model
 
 train(WordnetPuzzleGenerator('entity.n.1'), 
+      initial_root_synset = 'cat.n.1',
       num_epochs=300000, 
       hidden_size=300,
       num_puzzles_to_generate=2000,
