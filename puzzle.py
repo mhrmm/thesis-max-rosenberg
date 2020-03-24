@@ -34,6 +34,10 @@ class WordnetPuzzleGenerator(PuzzleGenerator):
     def get_vocab(self):
         return self.vocab
     
+    def reset_root(self, root_synset):
+        self.root_synset = wn.synset(root_synset)
+        self.synset_gen = GetRandomSynset(root_synset)        
+    
     def generate(self):
         root = self.synset_gen.random_synset_with_specificity(10, 1000)
         while root == self.root_synset:
