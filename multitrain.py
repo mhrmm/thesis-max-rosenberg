@@ -18,6 +18,7 @@ class PuzzleDataset(Dataset):
         self.response_vector = make_puzzle_targets([label for (_, label) in puzzles])
         self.num_choices = 5
 
+
     def input_size(self):
         return len(self.vocab) * self.num_choices
 
@@ -31,6 +32,10 @@ class PuzzleDataset(Dataset):
     def generate(generator, num_train):
         data = list(set(generator.batch_generate(num_train)))
         return PuzzleDataset(data, generator.get_vocab())
+
+    @staticmethod
+    def compile_puzzle(generator, puzzle):
+        return make_puzzle_matrix([(puzzle, -1)], generator.get_vocab())
    
     @staticmethod
     def create_data_loader(dataset, batch_size):
@@ -40,6 +45,27 @@ class PuzzleDataset(Dataset):
         return dataloader
 
 
+class PhraseEncoder(nn.Module):
+    def __init__(self, vocab_size, hidden_size):
+        super(PhraseEncoder, self).__init__()
+        self.hidden_size = hidden_size
+        self.linear1 = nn.Linear(vocab_size, hidden_size)
+        self.dropout = torch.nn.Dropout(p=0.2)
+        self.linear2 = nn.Linear(hidden_size, hidden_size)
+        self.linear3 = nn.Linear(hidden_size, hidden_size)
+        self.linear4 = nn.Linear(hidden_size, hidden_size)
+ 
+    def forward(self, input_vec):
+        output = self.linear1(input_vec).clamp(min=0)
+        output = self.dropout(output)
+        output = self.linear2(output).clamp(min=0)
+        output = self.dropout(output)
+        output = self.linear3(output).clamp(min=0)
+        output = self.linear4(output)
+        return output
+        
+
+
 class TiedClassifier(nn.Module): 
 
     def __init__(self, input_size, num_labels, hidden_size):
@@ -47,10 +73,8 @@ class TiedClassifier(nn.Module):
         self.input_size = input_size
         self.vocab_size = input_size // 5
         self.hidden_size = hidden_size
-        self.linear1 = nn.Linear(self.vocab_size, hidden_size)
+        self.word_encoder = PhraseEncoder(self.vocab_size, hidden_size)
         self.dropout = torch.nn.Dropout(p=0.2)
-        self.linear2 = nn.Linear(hidden_size, hidden_size)
-        self.linear2b = nn.Linear(hidden_size, hidden_size)
         self.linear3 = nn.Linear(5*hidden_size, hidden_size)
         self.linear4 = nn.Linear(hidden_size, hidden_size)
         self.linear5 = nn.Linear(hidden_size, hidden_size)
@@ -58,27 +82,11 @@ class TiedClassifier(nn.Module):
 
     def forward(self, input_vec):
         t = input_vec
-        
-        output = self.linear1(t[:,0*self.vocab_size:1*self.vocab_size]).clamp(min=0)
-        output = self.dropout(output)
-        output = self.linear2(output).clamp(min=0)
-        output1 = self.linear2b(output).clamp(min=0)
-        output = self.linear1(t[:,1*self.vocab_size:2*self.vocab_size]).clamp(min=0)
-        output = self.dropout(output)
-        output = self.linear2(output).clamp(min=0)
-        output2 = self.linear2b(output).clamp(min=0)
-        output = self.linear1(t[:,2*self.vocab_size:3*self.vocab_size]).clamp(min=0)
-        output = self.dropout(output)
-        output = self.linear2(output).clamp(min=0)
-        output3 = self.linear2b(output).clamp(min=0)
-        output = self.linear1(t[:,3*self.vocab_size:4*self.vocab_size]).clamp(min=0)
-        output = self.dropout(output)
-        output = self.linear2(output).clamp(min=0)
-        output4 = self.linear2b(output).clamp(min=0)
-        output = self.linear1(t[:,4*self.vocab_size:5*self.vocab_size]).clamp(min=0)
-        output = self.dropout(output)
-        output = self.linear2(output).clamp(min=0)
-        output5 = self.linear2b(output).clamp(min=0)
+        output1 = self.word_encoder(t[:,0*self.vocab_size:1*self.vocab_size])
+        output2 = self.word_encoder(t[:,1*self.vocab_size:2*self.vocab_size])
+        output3 = self.word_encoder(t[:,2*self.vocab_size:3*self.vocab_size])
+        output4 = self.word_encoder(t[:,3*self.vocab_size:4*self.vocab_size])
+        output5 = self.word_encoder(t[:,4*self.vocab_size:5*self.vocab_size])
         nextout = torch.cat([output1, output2, output3, output4, output5], dim=1) 
         nextout = self.linear3(nextout).clamp(min=0)
         nextout = self.dropout(nextout)
@@ -89,32 +97,6 @@ class TiedClassifier(nn.Module):
         nextout = self.final_layer(nextout)
         return F.log_softmax(nextout, dim=1)
      
-
-
-class ThreeLayerClassifier(nn.Module): 
-
-    def __init__(self, input_size, num_labels, hidden_size):
-        super(ThreeLayerClassifier, self).__init__()
-        self.hidden_size = hidden_size
-        self.linear1 = nn.Linear(input_size, hidden_size)
-        self.dropout = torch.nn.Dropout(p=0.2)
-        self.linear2 = nn.Linear(hidden_size, hidden_size)
-        self.linear3 = nn.Linear(hidden_size, hidden_size)
-        self.linear4 = nn.Linear(hidden_size, hidden_size)
-        self.linear5 = nn.Linear(hidden_size, num_labels)
-
-    def forward(self, input_vec):
-        nextout = input_vec
-        nextout = self.linear1(nextout).clamp(min=0)
-        nextout = self.dropout(nextout)
-        nextout = self.linear2(nextout).clamp(min=0)
-        nextout = self.dropout(nextout)
-        nextout = self.linear3(nextout).clamp(min=0)
-        nextout = self.dropout(nextout)
-        nextout = self.linear4(nextout).clamp(min=0)
-        nextout = self.dropout(nextout)
-        nextout = self.linear5(nextout)
-        return F.log_softmax(nextout, dim=1)
 
 def evaluate(model, loader):
     """Evaluates the trained network on test data."""
@@ -132,7 +114,16 @@ def evaluate(model, loader):
                     correct += 1
     return correct / total
 
-def train(puzzle_generator, initial_root_synset, num_epochs, hidden_size, 
+def predict(model, puzzle, generator):
+    compiled = PuzzleDataset.compile_puzzle(generator, puzzle)
+    model.eval()
+    input_matrix = compiled.to(device)
+    model = model.to(device)
+    log_probs = model(input_matrix)
+    predictions = log_probs.argmax(dim=1)
+    return predictions    
+
+def train(final_root_synset, initial_root_synset, num_epochs, hidden_size, 
           num_puzzles_to_generate, batch_size, multigpu = False):
     def maybe_regenerate(puzzle_generator, epoch, prev_loader, prev_test_loader):
         if epoch % 100 == 0:
@@ -144,17 +135,17 @@ def train(puzzle_generator, initial_root_synset, num_epochs, hidden_size,
         else:
             return prev_loader, prev_test_loader
     
-    def maybe_evaluate(model, epoch, prev_best, prev_best_acc):
+    def maybe_evaluate(model, epoch, current_root, prev_best, prev_best_acc):
         best_model = prev_best
         best_test_acc = prev_best_acc
         if epoch % 100 == 99:
             test_acc = evaluate(model, test_loader)
-            print('epoch {} test: {:.2f}'.format(epoch, test_acc))
+            print('epoch {} test ({}): {:.2f}'.format(epoch, current_root, test_acc))
             if test_acc > prev_best_acc:
                 best_test_acc = test_acc
                 best_model = model
-                #print('saving new model')
-                #torch.save(best_model, 'best.model')
+                print('saving new model')
+                torch.save(best_model.state_dict, 'best.model')
         return best_model, best_test_acc
     
     def maybe_report_time():
@@ -165,10 +156,10 @@ def train(puzzle_generator, initial_root_synset, num_epochs, hidden_size,
 
 
     start_time = time.clock()
+    puzzle_generator = WordnetPuzzleGenerator(final_root_synset)
     input_size = 5 * len(puzzle_generator.get_vocab())
     output_size = 5
     model = TiedClassifier(input_size, output_size, hidden_size)
-    #model = ThreeLayerClassifier(input_size, output_size, hidden_size)
     if multigpu and torch.cuda.device_count() > 1:
         print("Let's use", torch.cuda.device_count(), "GPUs!")
         #dim = 0 [30, xxx] -> [10, ...], [10, ...], [10, ...] on 3 GPUs
@@ -193,14 +184,16 @@ def train(puzzle_generator, initial_root_synset, num_epochs, hidden_size,
             loss = loss_function(log_probs, response)
             loss.backward()
             optimizer.step()
-        best_model, best_test_acc = maybe_evaluate(model, epoch,
+        best_model, best_test_acc = maybe_evaluate(model, epoch, initial_root_synset,
                                                    best_model, best_test_acc)
         
-        if best_test_acc > .8 and initial_root_synset != 'entity.n.1':
+        if best_test_acc > .8 and initial_root_synset != final_root_synset:
             current_root = initial_root_synset
             initial_root_synset = hypernym_chain(initial_root_synset)[1].name()
             puzzle_generator.reset_root(initial_root_synset)
             print("Successful training of {}! Moving on to {}.".format(current_root, initial_root_synset))
+            print('saving new model')
+            torch.save(model.state_dict(), 'best.model')
             best_test_acc = -1.0
             loader, test_loader = maybe_regenerate(puzzle_generator, 100, 
                                                    loader, test_loader)
@@ -208,11 +201,12 @@ def train(puzzle_generator, initial_root_synset, num_epochs, hidden_size,
         maybe_report_time()
     return best_model
 
-train(WordnetPuzzleGenerator('entity.n.1'), 
-      initial_root_synset = 'cat.n.1',
-      num_epochs=300000, 
-      hidden_size=500,
-      num_puzzles_to_generate=200,
-      batch_size=256,
-      multigpu=False)
+if __name__ == '__main__':
+    train(final_root_synset = 'carnivore.n.01', 
+          initial_root_synset = 'cat.n.01',
+          num_epochs=300000, 
+          hidden_size=500,
+          num_puzzles_to_generate=2000,
+          batch_size=256,
+          multigpu=False)
 
