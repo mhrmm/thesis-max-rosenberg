@@ -50,34 +50,43 @@ class TiedClassifier(nn.Module):
         self.linear1 = nn.Linear(self.vocab_size, hidden_size)
         self.dropout = torch.nn.Dropout(p=0.2)
         self.linear2 = nn.Linear(hidden_size, hidden_size)
+        self.linear2b = nn.Linear(hidden_size, hidden_size)
         self.linear3 = nn.Linear(5*hidden_size, hidden_size)
         self.linear4 = nn.Linear(hidden_size, hidden_size)
-        self.linear5 = nn.Linear(hidden_size, num_labels)
+        self.linear5 = nn.Linear(hidden_size, hidden_size)
+        self.final_layer = nn.Linear(hidden_size, num_labels)
 
     def forward(self, input_vec):
         t = input_vec
         
         output = self.linear1(t[:,0*self.vocab_size:1*self.vocab_size]).clamp(min=0)
         output = self.dropout(output)
-        output1 = self.linear2(output).clamp(min=0)
+        output = self.linear2(output).clamp(min=0)
+        output1 = self.linear2b(output).clamp(min=0)
         output = self.linear1(t[:,1*self.vocab_size:2*self.vocab_size]).clamp(min=0)
         output = self.dropout(output)
-        output2 = self.linear2(output).clamp(min=0)
+        output = self.linear2(output).clamp(min=0)
+        output2 = self.linear2b(output).clamp(min=0)
         output = self.linear1(t[:,2*self.vocab_size:3*self.vocab_size]).clamp(min=0)
         output = self.dropout(output)
-        output3 = self.linear2(output).clamp(min=0)
+        output = self.linear2(output).clamp(min=0)
+        output3 = self.linear2b(output).clamp(min=0)
         output = self.linear1(t[:,3*self.vocab_size:4*self.vocab_size]).clamp(min=0)
         output = self.dropout(output)
-        output4 = self.linear2(output).clamp(min=0)
+        output = self.linear2(output).clamp(min=0)
+        output4 = self.linear2b(output).clamp(min=0)
         output = self.linear1(t[:,4*self.vocab_size:5*self.vocab_size]).clamp(min=0)
         output = self.dropout(output)
-        output5 = self.linear2(output).clamp(min=0)
+        output = self.linear2(output).clamp(min=0)
+        output5 = self.linear2b(output).clamp(min=0)
         nextout = torch.cat([output1, output2, output3, output4, output5], dim=1) 
         nextout = self.linear3(nextout).clamp(min=0)
         nextout = self.dropout(nextout)
         nextout = self.linear4(nextout).clamp(min=0)
         nextout = self.dropout(nextout)
-        nextout = self.linear5(nextout)
+        nextout = self.linear5(nextout).clamp(min=0)
+        nextout = self.dropout(nextout)
+        nextout = self.final_layer(nextout)
         return F.log_softmax(nextout, dim=1)
      
 
@@ -138,7 +147,7 @@ def train(puzzle_generator, initial_root_synset, num_epochs, hidden_size,
     def maybe_evaluate(model, epoch, prev_best, prev_best_acc):
         best_model = prev_best
         best_test_acc = prev_best_acc
-        if epoch % 5 == 0:
+        if epoch % 100 == 99:
             test_acc = evaluate(model, test_loader)
             print('epoch {} test: {:.2f}'.format(epoch, test_acc))
             if test_acc > prev_best_acc:
@@ -149,7 +158,7 @@ def train(puzzle_generator, initial_root_synset, num_epochs, hidden_size,
         return best_model, best_test_acc
     
     def maybe_report_time():
-        if epoch % 100 == 0 and epoch > 0:
+        if False and epoch % 100 == 0 and epoch > 0:
             finish_time = time.clock()
             time_per_epoch = (finish_time - start_time) / epoch
             print('Average time per epoch: {:.2} sec'.format(time_per_epoch))
@@ -202,8 +211,8 @@ def train(puzzle_generator, initial_root_synset, num_epochs, hidden_size,
 train(WordnetPuzzleGenerator('entity.n.1'), 
       initial_root_synset = 'cat.n.1',
       num_epochs=300000, 
-      hidden_size=300,
-      num_puzzles_to_generate=2000,
-      batch_size=128,
+      hidden_size=500,
+      num_puzzles_to_generate=200,
+      batch_size=256,
       multigpu=False)
 
