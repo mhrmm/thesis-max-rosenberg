@@ -120,8 +120,23 @@ def predict(model, puzzle, generator):
     input_matrix = compiled.to(device)
     model = model.to(device)
     log_probs = model(input_matrix)
-    predictions = log_probs.argmax(dim=1)
-    return predictions    
+    prediction = log_probs.argmax(dim=1).item()
+    return prediction
+
+def predict_k(model, generator, k):
+    model.eval()
+    with torch.no_grad():
+        correct = 0
+        for i in range(k):
+            puzzle = generator.generate()
+            candidate = predict(model, puzzle[0], generator)
+            if candidate == puzzle[1]:
+                correct += 1
+            #print(puzzle)
+            #print('EXPECTED: {}'.format(puzzle[0][puzzle[1]]))
+            #print('GUESSED:  {}'.format(puzzle[0][candidate]))
+    print('OVERALL: {}'.format(correct/k))
+        
 
 def train(final_root_synset, initial_root_synset, num_epochs, hidden_size, 
           num_puzzles_to_generate, batch_size, multigpu = False):
@@ -129,7 +144,7 @@ def train(final_root_synset, initial_root_synset, num_epochs, hidden_size,
         if epoch % 100 == 0:
             dataset = PuzzleDataset.generate(puzzle_generator, num_puzzles_to_generate)
             loader = DataLoader(dataset = dataset, batch_size = batch_size, shuffle=True)
-            test_dataset = PuzzleDataset.generate(puzzle_generator, 100)
+            test_dataset = PuzzleDataset.generate(puzzle_generator, 1000)
             test_loader = DataLoader(dataset = test_dataset, batch_size = 100, shuffle=False)
             return loader, test_loader
         else:
@@ -145,7 +160,9 @@ def train(final_root_synset, initial_root_synset, num_epochs, hidden_size,
                 best_test_acc = test_acc
                 best_model = model
                 print('saving new model')
-                torch.save(best_model.state_dict, 'best.model')
+                torch.save(best_model, 'best.model')
+                #torch.save(best_model.state_dict(), 'best.model')
+                #predict_k(model, puzzle_generator, 1000)
         return best_model, best_test_acc
     
     def maybe_report_time():
@@ -155,8 +172,11 @@ def train(final_root_synset, initial_root_synset, num_epochs, hidden_size,
             print('Average time per epoch: {:.2} sec'.format(time_per_epoch))
 
 
+    bounds = [10]
+    current_bound = 0
     start_time = time.clock()
     puzzle_generator = WordnetPuzzleGenerator(final_root_synset)
+    puzzle_generator.specificity_lb = bounds[current_bound]
     input_size = 5 * len(puzzle_generator.get_vocab())
     output_size = 5
     model = TiedClassifier(input_size, output_size, hidden_size)
@@ -169,10 +189,18 @@ def train(final_root_synset, initial_root_synset, num_epochs, hidden_size,
     loader = None
     test_loader = None
     loss_function = nn.NLLLoss()
+    #loss_function = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters())
+    #optimizer = optim.SGD(model.parameters(), lr=5.0)
+    
+
     best_model = None
     best_test_acc = -1.0
     puzzle_generator.reset_root(initial_root_synset)
+    
+    
+    
+    
     for epoch in range(num_epochs):
         model.train()
         model.zero_grad()
@@ -183,27 +211,41 @@ def train(final_root_synset, initial_root_synset, num_epochs, hidden_size,
             log_probs = model(input_matrix)
             loss = loss_function(log_probs, response)
             loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 0.5)
             optimizer.step()
         best_model, best_test_acc = maybe_evaluate(model, epoch, initial_root_synset,
                                                    best_model, best_test_acc)
+
+        if best_test_acc > .8 and current_bound + 1 < len(bounds):
+            current_bound += 1
+            puzzle_generator.specificity_lb = bounds[current_bound]
+            print("Successful training of {}! Moving on to {}.".format(bounds[current_bound-1], 
+                                                                       bounds[current_bound]))
+            print('saving new model')
+            torch.save(model, 'best.model')
+            best_test_acc = -1.0
+            loader, test_loader = maybe_regenerate(puzzle_generator, 100, 
+                                                   loader, test_loader)
         
+        """
         if best_test_acc > .8 and initial_root_synset != final_root_synset:
             current_root = initial_root_synset
             initial_root_synset = hypernym_chain(initial_root_synset)[1].name()
             puzzle_generator.reset_root(initial_root_synset)
             print("Successful training of {}! Moving on to {}.".format(current_root, initial_root_synset))
             print('saving new model')
-            torch.save(model.state_dict(), 'best.model')
+            torch.save(model, 'best.model')
             best_test_acc = -1.0
             loader, test_loader = maybe_regenerate(puzzle_generator, 100, 
                                                    loader, test_loader)
         
+        """
         maybe_report_time()
     return best_model
 
 if __name__ == '__main__':
     train(final_root_synset = 'carnivore.n.01', 
-          initial_root_synset = 'cat.n.01',
+          initial_root_synset = 'carnivore.n.01',
           num_epochs=300000, 
           hidden_size=500,
           num_puzzles_to_generate=2000,

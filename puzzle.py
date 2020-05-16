@@ -24,9 +24,11 @@ class WordnetPuzzleGenerator(PuzzleGenerator):
         self.root_synset = wn.synset(root_synset)
         self.synset_gen = GetRandomSynset(root_synset)
         self.vocab = self._build_vocab()
+        self.specificity_lb = 10
+        self.specificity_ub = 5000
         
     def _build_vocab(self):
-        words = list(get_all_lemmas_from_sense(self.root_synset))
+        words = sorted(list(get_all_lemmas_from_sense(self.root_synset)))
         word_to_ix = dict([(v, k) for (k,v) in enumerate(words)])
         print("vocab size: {}".format(len(word_to_ix)))
         return word_to_ix
@@ -39,9 +41,11 @@ class WordnetPuzzleGenerator(PuzzleGenerator):
         self.synset_gen = GetRandomSynset(root_synset)        
     
     def generate(self):
-        root = self.synset_gen.random_synset_with_specificity(10, 1000)
+        root = self.synset_gen.random_synset_with_specificity(self.specificity_lb, 
+                                                              self.specificity_ub)
         while root == self.root_synset:
-            root = self.synset_gen.random_synset_with_specificity(10, 1000)
+            root = self.synset_gen.random_synset_with_specificity(self.specificity_lb,
+                                                                  self.specificity_ub)
         hyps = get_all_lemmas_from_sense(root) # children?
         puzzle = random.sample(hyps, 4)
         random_hyp = self.synset_gen.random_non_hyponym(root)

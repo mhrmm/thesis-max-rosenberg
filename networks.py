@@ -17,6 +17,18 @@ class DropoutClassifier(nn.Module):
                               i in range(num_layers - 2)]
         self.linear3 = nn.Linear(hidden_size, num_labels)
 
+    """
+    def init_weights(self):
+        initrange = 0.1
+        self.linear1.weight.data.uniform_(-initrange, initrange)
+        self.linear1.bias.data.zero_()
+        for layer in self.middle_layers:
+            layer.weight.data.uniform_(-initrange, initrange)
+            layer.bias.data.zero_()            
+        self.linear3.weight.data.uniform_(-initrange, initrange)
+        self.linear3.bias.data.zero_()
+    """
+    
     def forward(self, input_vec):
         nextout = input_vec
         nextout = self.linear1(nextout).clamp(min=0)

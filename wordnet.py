@@ -42,6 +42,14 @@ def get_all_hypernyms(word):
             result.add(y)
     return result
 
+def get_hyponyms(synset_name):
+    """
+    e.g. get_all_hyponyms('metallic_element.n.01')
+    
+    """
+    sense = wn.synset(synset_name)
+    return sense.hyponyms()
+
 
 def get_all_hyponyms_from_sense(sense):
     """
