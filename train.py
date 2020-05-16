@@ -2,11 +2,11 @@ import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 import torch.optim as optim
-import torch.nn.functional as F
 from puzzle import make_puzzle_matrix, make_puzzle_targets, WordnetPuzzleGenerator
 import time
 from wordnet import hypernym_chain
-
+from networks import initialize_net
+import matplotlib.pyplot as plt
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -44,58 +44,6 @@ class PuzzleDataset(Dataset):
                                      shuffle=True)
         return dataloader
 
-
-class PhraseEncoder(nn.Module):
-    def __init__(self, vocab_size, hidden_size):
-        super(PhraseEncoder, self).__init__()
-        self.hidden_size = hidden_size
-        self.linear1 = nn.Linear(vocab_size, hidden_size)
-        self.dropout = torch.nn.Dropout(p=0.2)
-        self.linear2 = nn.Linear(hidden_size, hidden_size)
-        self.linear3 = nn.Linear(hidden_size, hidden_size)
-        self.linear4 = nn.Linear(hidden_size, hidden_size)
- 
-    def forward(self, input_vec):
-        output = self.linear1(input_vec).clamp(min=0)
-        output = self.dropout(output)
-        output = self.linear2(output).clamp(min=0)
-        output = self.dropout(output)
-        output = self.linear3(output).clamp(min=0)
-        output = self.linear4(output)
-        return output
-        
-
-
-class TiedClassifier(nn.Module): 
-
-    def __init__(self, input_size, num_labels, hidden_size):
-        super(TiedClassifier, self).__init__()
-        self.input_size = input_size
-        self.vocab_size = input_size // 5
-        self.hidden_size = hidden_size
-        self.word_encoder = PhraseEncoder(self.vocab_size, hidden_size)
-        self.dropout = torch.nn.Dropout(p=0.2)
-        self.linear3 = nn.Linear(5*hidden_size, hidden_size)
-        self.linear4 = nn.Linear(hidden_size, hidden_size)
-        self.linear5 = nn.Linear(hidden_size, hidden_size)
-        self.final_layer = nn.Linear(hidden_size, num_labels)
-
-    def forward(self, input_vec):
-        t = input_vec
-        output1 = self.word_encoder(t[:,0*self.vocab_size:1*self.vocab_size])
-        output2 = self.word_encoder(t[:,1*self.vocab_size:2*self.vocab_size])
-        output3 = self.word_encoder(t[:,2*self.vocab_size:3*self.vocab_size])
-        output4 = self.word_encoder(t[:,3*self.vocab_size:4*self.vocab_size])
-        output5 = self.word_encoder(t[:,4*self.vocab_size:5*self.vocab_size])
-        nextout = torch.cat([output1, output2, output3, output4, output5], dim=1) 
-        nextout = self.linear3(nextout).clamp(min=0)
-        nextout = self.dropout(nextout)
-        nextout = self.linear4(nextout).clamp(min=0)
-        nextout = self.dropout(nextout)
-        nextout = self.linear5(nextout).clamp(min=0)
-        nextout = self.dropout(nextout)
-        nextout = self.final_layer(nextout)
-        return F.log_softmax(nextout, dim=1)
      
 
 def evaluate(model, loader):
@@ -138,8 +86,9 @@ def predict_k(model, generator, k):
     print('OVERALL: {}'.format(correct/k))
         
 
-def train(final_root_synset, initial_root_synset, num_epochs, hidden_size, 
-          num_puzzles_to_generate, batch_size, multigpu = False):
+def train(final_root_synset, initial_root_synset, num_epochs, 
+          num_puzzles_to_generate, batch_size, experiment_name,
+          multigpu = False):
     def maybe_regenerate(puzzle_generator, epoch, prev_loader, prev_test_loader):
         if epoch % 100 == 0:
             dataset = PuzzleDataset.generate(puzzle_generator, num_puzzles_to_generate)
@@ -178,7 +127,7 @@ def train(final_root_synset, initial_root_synset, num_epochs, hidden_size,
     puzzle_generator.specificity_lb = 10
     input_size = 5 * len(puzzle_generator.get_vocab())
     output_size = 5
-    model = TiedClassifier(input_size, output_size, hidden_size)
+    model = initialize_net(experiment_name, input_size, output_size)
     if multigpu and torch.cuda.device_count() > 1:
         print("Let's use", torch.cuda.device_count(), "GPUs!")
         #dim = 0 [30, xxx] -> [10, ...], [10, ...], [10, ...] on 3 GPUs
@@ -227,13 +176,26 @@ def train(final_root_synset, initial_root_synset, num_epochs, hidden_size,
         maybe_report_time()
     return best_model, scores
 
-def run(experiment_name = "foo"):
+def experiment(experiment_name = "tied-phrase"):
     _, scores = train(final_root_synset = 'carnivore.n.01', 
                       initial_root_synset = 'carnivore.n.01',
-                      num_epochs=1000, 
-                      hidden_size=500,
+                      num_epochs=1000,
                       num_puzzles_to_generate=2000,
                       batch_size=256,
+                      experiment_name=experiment_name,
                       multigpu=False)
     return [score[0] for score in scores], [score[1] for score in scores]
  
+def run():
+    configs = ['tied-phrase', 'tied-phrasenodropout']
+    results = []
+    for config in configs:
+        x, y = experiment(config)
+        results.append(x)
+        results.append(y)
+    plt.plot(*results)
+    
+    
+        
+    
+    
