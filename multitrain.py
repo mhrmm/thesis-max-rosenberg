@@ -153,6 +153,7 @@ def train(final_root_synset, initial_root_synset, num_epochs, hidden_size,
     def maybe_evaluate(model, epoch, current_root, prev_best, prev_best_acc):
         best_model = prev_best
         best_test_acc = prev_best_acc
+        test_acc = None
         if epoch % 100 == 99:
             test_acc = evaluate(model, test_loader)
             print('epoch {} test ({}): {:.2f}'.format(epoch, current_root, test_acc))
@@ -163,7 +164,7 @@ def train(final_root_synset, initial_root_synset, num_epochs, hidden_size,
                 torch.save(best_model, 'best.model')
                 #torch.save(best_model.state_dict(), 'best.model')
                 #predict_k(model, puzzle_generator, 1000)
-        return best_model, best_test_acc
+        return best_model, best_test_acc, test_acc
     
     def maybe_report_time():
         if False and epoch % 100 == 0 and epoch > 0:
@@ -172,11 +173,9 @@ def train(final_root_synset, initial_root_synset, num_epochs, hidden_size,
             print('Average time per epoch: {:.2} sec'.format(time_per_epoch))
 
 
-    bounds = [10]
-    current_bound = 0
     start_time = time.clock()
     puzzle_generator = WordnetPuzzleGenerator(final_root_synset)
-    puzzle_generator.specificity_lb = bounds[current_bound]
+    puzzle_generator.specificity_lb = 10
     input_size = 5 * len(puzzle_generator.get_vocab())
     output_size = 5
     model = TiedClassifier(input_size, output_size, hidden_size)
@@ -192,15 +191,11 @@ def train(final_root_synset, initial_root_synset, num_epochs, hidden_size,
     #loss_function = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters())
     #optimizer = optim.SGD(model.parameters(), lr=5.0)
-    
-
     best_model = None
     best_test_acc = -1.0
     puzzle_generator.reset_root(initial_root_synset)
-    
-    
-    
-    
+
+    scores = []    
     for epoch in range(num_epochs):
         model.train()
         model.zero_grad()
@@ -213,21 +208,12 @@ def train(final_root_synset, initial_root_synset, num_epochs, hidden_size,
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 0.5)
             optimizer.step()
-        best_model, best_test_acc = maybe_evaluate(model, epoch, initial_root_synset,
-                                                   best_model, best_test_acc)
-
-        if best_test_acc > .8 and current_bound + 1 < len(bounds):
-            current_bound += 1
-            puzzle_generator.specificity_lb = bounds[current_bound]
-            print("Successful training of {}! Moving on to {}.".format(bounds[current_bound-1], 
-                                                                       bounds[current_bound]))
-            print('saving new model')
-            torch.save(model, 'best.model')
-            best_test_acc = -1.0
-            loader, test_loader = maybe_regenerate(puzzle_generator, 100, 
-                                                   loader, test_loader)
-        
-        """
+        best_model, best_test_acc, test_acc = maybe_evaluate(model, epoch, 
+                                                             initial_root_synset,
+                                                             best_model, 
+                                                             best_test_acc)
+        if test_acc is not None:
+            scores.append((epoch, test_acc))
         if best_test_acc > .8 and initial_root_synset != final_root_synset:
             current_root = initial_root_synset
             initial_root_synset = hypernym_chain(initial_root_synset)[1].name()
@@ -238,17 +224,16 @@ def train(final_root_synset, initial_root_synset, num_epochs, hidden_size,
             best_test_acc = -1.0
             loader, test_loader = maybe_regenerate(puzzle_generator, 100, 
                                                    loader, test_loader)
-        
-        """
         maybe_report_time()
-    return best_model
+    return best_model, scores
 
-if __name__ == '__main__':
-    train(final_root_synset = 'carnivore.n.01', 
-          initial_root_synset = 'carnivore.n.01',
-          num_epochs=300000, 
-          hidden_size=500,
-          num_puzzles_to_generate=2000,
-          batch_size=256,
-          multigpu=False)
-
+def run(experiment_name = "foo"):
+    _, scores = train(final_root_synset = 'carnivore.n.01', 
+                      initial_root_synset = 'carnivore.n.01',
+                      num_epochs=1000, 
+                      hidden_size=500,
+                      num_puzzles_to_generate=2000,
+                      batch_size=256,
+                      multigpu=False)
+    return [score[0] for score in scores], [score[1] for score in scores]
+ 
