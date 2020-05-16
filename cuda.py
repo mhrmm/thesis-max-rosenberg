@@ -6,7 +6,7 @@ if torch.cuda.is_available():
     FloatTensor = torch.cuda.FloatTensor
     LongTensor = torch.cuda.LongTensor
     def cudaify(model):
-        return model.cuda()
+        return model.to(cuda)
 else:
     print("using cpu")
     cuda = torch.device('cpu')
