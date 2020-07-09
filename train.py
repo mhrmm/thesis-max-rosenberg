@@ -1,14 +1,19 @@
 import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
-import torch.optim as optim
 from puzzle import make_puzzle_matrix, make_puzzle_targets, WordnetPuzzleGenerator
 import time
 from wordnet import hypernym_chain
-from networks import initialize_net
 import matplotlib.pyplot as plt
+import json
+from tconfig import TrainingConfig, vary_dropout_prob, vary_hidden_size, vary_num_layers, vary_learning_rate
+from datetime import datetime
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+NUM_CHOICES = 3
+
+
 
 class PuzzleDataset(Dataset):
 
@@ -16,7 +21,7 @@ class PuzzleDataset(Dataset):
         self.vocab = vocab
         self.evidence_matrix = make_puzzle_matrix(puzzles, vocab)
         self.response_vector = make_puzzle_targets([label for (_, label) in puzzles])
-        self.num_choices = 5
+        self.num_choices = NUM_CHOICES
 
 
     def input_size(self):
@@ -87,12 +92,11 @@ def predict_k(model, generator, k):
         
 
 def train(final_root_synset, initial_root_synset, num_epochs, 
-          num_puzzles_to_generate, batch_size, experiment_name,
-          multigpu = False):
+          num_puzzles_to_generate, config, multigpu = False):
     def maybe_regenerate(puzzle_generator, epoch, prev_loader, prev_test_loader):
         if epoch % 100 == 0:
             dataset = PuzzleDataset.generate(puzzle_generator, num_puzzles_to_generate)
-            loader = DataLoader(dataset = dataset, batch_size = batch_size, shuffle=True)
+            loader = DataLoader(dataset = dataset, batch_size = config.get_batch_size(), shuffle=True)
             test_dataset = PuzzleDataset.generate(puzzle_generator, 1000)
             test_loader = DataLoader(dataset = test_dataset, batch_size = 100, shuffle=False)
             return loader, test_loader
@@ -123,11 +127,13 @@ def train(final_root_synset, initial_root_synset, num_epochs,
 
 
     start_time = time.clock()
-    puzzle_generator = WordnetPuzzleGenerator(final_root_synset)
+    puzzle_generator = WordnetPuzzleGenerator(final_root_synset, NUM_CHOICES)
     puzzle_generator.specificity_lb = 10
-    input_size = 5 * len(puzzle_generator.get_vocab())
-    output_size = 5
-    model = initialize_net(experiment_name, input_size, output_size)
+    input_size = NUM_CHOICES * len(puzzle_generator.get_vocab())
+    output_size = NUM_CHOICES
+    net_factory = config.create_network_factory()
+    model = net_factory(input_size, output_size)
+    #model = initialize_net(experiment_name, input_size, output_size)
     if multigpu and torch.cuda.device_count() > 1:
         print("Let's use", torch.cuda.device_count(), "GPUs!")
         #dim = 0 [30, xxx] -> [10, ...], [10, ...], [10, ...] on 3 GPUs
@@ -138,7 +144,8 @@ def train(final_root_synset, initial_root_synset, num_epochs,
     test_loader = None
     loss_function = nn.NLLLoss()
     #loss_function = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters())
+    optimizer = config.create_optimizer_factory()(model.parameters())
+    #optimizer = optim.Adam(model.parameters())
     #optimizer = optim.SGD(model.parameters(), lr=5.0)
     best_model = None
     best_test_acc = -1.0
@@ -163,7 +170,7 @@ def train(final_root_synset, initial_root_synset, num_epochs,
                                                              best_test_acc)
         if test_acc is not None:
             scores.append((epoch, test_acc))
-        if best_test_acc > .8 and initial_root_synset != final_root_synset:
+        if best_test_acc > .9 and initial_root_synset != final_root_synset:
             current_root = initial_root_synset
             initial_root_synset = hypernym_chain(initial_root_synset)[1].name()
             puzzle_generator.reset_root(initial_root_synset)
@@ -173,29 +180,97 @@ def train(final_root_synset, initial_root_synset, num_epochs,
             best_test_acc = -1.0
             loader, test_loader = maybe_regenerate(puzzle_generator, 100, 
                                                    loader, test_loader)
+        if best_test_acc > .9 and initial_root_synset == final_root_synset:
+            break
         maybe_report_time()
     return best_model, scores
 
-def experiment(experiment_name = "tied-phrase"):
-    _, scores = train(final_root_synset = 'carnivore.n.01', 
-                      initial_root_synset = 'carnivore.n.01',
-                      num_epochs=1000,
+def experiment(config, initial_root_synset, final_root_synset):
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()    
+    _, scores = train(final_root_synset = final_root_synset, 
+                      initial_root_synset = initial_root_synset,
+                      num_epochs=500000,
                       num_puzzles_to_generate=2000,
-                      batch_size=256,
-                      experiment_name=experiment_name,
+                      config=config,
                       multigpu=False)
-    return [score[0] for score in scores], [score[1] for score in scores]
- 
-def run():
-    configs = ['tied-phrase', 'tied-phrasenodropout']
+    return scores
+
+
+        
+        
+
+def run_multiple(experiment_log, configs):
+    assert(experiment_log.endswith('.exp.json'))    
+    root_synset = experiment_log[:-9]
+    if '._until_.' in root_synset:
+        initial, final = root_synset.split('._until_.')
+    else:
+        initial = root_synset
+        final = root_synset
     results = []
     for config in configs:
-        x, y = experiment(config)
+        print(config.hyperparams)
+        trajectory = experiment(config, initial, final)
+        x = [point[0] for point in trajectory]
+        y = [point[1] for point in trajectory]
         results.append(x)
         results.append(y)
+        try:
+            with open(experiment_log) as reader:
+                data = json.load(reader)
+        except FileNotFoundError:
+            data = []
+        with open(experiment_log, 'w') as writer:
+            data.append({'time': str(datetime.now()), 
+                         'config': config.hyperparams, 
+                         'x': x, 'y': y})
+            writer.write(json.dumps(data, indent=4))
+        plt.plot(*results)
+
+def graph_results(experiment_log):
+    with open(experiment_log) as reader:
+        data = json.load(reader)
+    data = sorted(data, key = lambda ex: -max(ex['y']))
+    results = []
+    for i, experiment in enumerate(data):
+        if i < 5:
+            results.append(experiment['x'])
+            results.append(experiment['y'])
+            print(experiment['config'])
     plt.plot(*results)
+
+
+
+
+def best_experiments(experiment_log, k=1):
+    with open(experiment_log) as reader:
+        data = json.load(reader)
+    results = sorted([(-max(exp['y']), exp) for exp in data])
+    return results[:k]    
+
+def main(filename):
+    sgd_config = TrainingConfig() 
+    #adam_config = sgd_config.replace('optimizer', {'name': 'adam',
+    #                                               'rate': 0.001})
+    #sgd_dropout = vary_dropout_prob(sgd_config, [0.0, 0.1, 0.2, 0.5])
+    #adam_dropout = vary_dropout_prob(adam_config, [0.0, 0.1, 0.2, 0.5])
+    #sgd_hidden_size = vary_hidden_size(sgd_config, [100, 200, 400, 800])
+    #adam_hidden_size = vary_hidden_size(adam_config, [100, 200, 400, 800])
+    #sgd_num_layers = vary_num_layers(sgd_config, [0,2,4,6,8])
+    #adam_num_layers = vary_num_layers(adam_config, [0,2,4,6,8])
+    sgd_rate = vary_learning_rate(sgd_config, [0.001,0.0001])
+    sgd_rate2 = vary_learning_rate(sgd_config, [0.001,0.0001])
+    #adam_rate = vary_learning_rate(adam_config, [0.1,0.01,0.001,0.0001])
+    configs = (sgd_rate + sgd_rate2)
+    run_multiple(filename, configs)
+  
+
     
+if __name__ == '__main__':
+    import sys
+    filename = sys.argv[1]
+    main(filename)
     
-        
     
     

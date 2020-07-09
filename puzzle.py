@@ -19,13 +19,14 @@ class PuzzleGenerator:
     
 class WordnetPuzzleGenerator(PuzzleGenerator):
     
-    def __init__(self, root_synset):
+    def __init__(self, root_synset, num_choices):
         super(WordnetPuzzleGenerator, self).__init__()
         self.root_synset = wn.synset(root_synset)
         self.synset_gen = GetRandomSynset(root_synset)
         self.vocab = self._build_vocab()
         self.specificity_lb = 10
         self.specificity_ub = 5000
+        self.num_choices = num_choices
         
     def _build_vocab(self):
         words = sorted(list(get_all_lemmas_from_sense(self.root_synset)))
@@ -47,13 +48,17 @@ class WordnetPuzzleGenerator(PuzzleGenerator):
             root = self.synset_gen.random_synset_with_specificity(self.specificity_lb,
                                                                   self.specificity_ub)
         hyps = get_all_lemmas_from_sense(root) # children?
-        puzzle = random.sample(hyps, 4)
+        puzzle = random.sample(hyps, self.num_choices - 1)
         random_hyp = self.synset_gen.random_non_hyponym(root)
         random_word = random.choice(list(get_all_lemmas_from_sense(random_hyp)))
         puzzle.append(random_word)
-        (w1, w2, w3, w4, w5) = puzzle#[normalize_lemma(random.choice(s.lemmas()).name()) for s in puzzle]
-        result = [(str(w1), 0), (str(w2), 0), (str(w3), 0), 
-                  (str(w4), 0), (str(w5), 1)]
+        result = []
+        for choice in puzzle[:-1]:
+            result.append((str(choice), 0))
+        result.append((str(puzzle[-1]), 1))
+        #(w1, w2, w3, w4, w5) = puzzle#[normalize_lemma(random.choice(s.lemmas()).name()) for s in puzzle]
+        #result = [(str(w1), 0), (str(w2), 0), (str(w3), 0), 
+        #          (str(w4), 0), (str(w5), 1)]
         random.shuffle(result)
         xyz = tuple([i for (i,_) in result])
         onehot = [j for (_,j) in result]
