@@ -1,0 +1,43 @@
+[
+    {
+        "time": "2020-07-31 18:51:41.251231",
+        "config": {
+            "batchsize": 128,
+            "optimizer": {
+                "name": "sgd",
+                "rate": 0.001,
+                "momentum": 0.9
+            },
+            "network": {
+                "name": "tied",
+                "numchoices": 5,
+                "numlayers": 2,
+                "hiddensize": 200,
+                "dropout": {
+                    "prob": 0.2
+                },
+                "layernorm": false
+            }
+        },
+        "x": [
+            99,
+            199,
+            299,
+            399,
+            499,
+            599,
+            699,
+            799
+        ],
+        "y": [
+            0.614,
+            0.627,
+            0.651,
+            0.755,
+            0.882,
+            0.931,
+            0.973,
+            0.982
+        ]
+    }
+]

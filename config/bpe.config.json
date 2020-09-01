@@ -1,0 +1,26 @@
+[{
+    "puzzle": {
+        "genre": "wordnet",
+        "root": "living_thing.n.01",
+        "numchoices": 5
+    },
+    "tokenizer": {
+        "name": "bpe",
+        "codes": "data/codes_10k",
+        "vocab": "data/vocab_10k.txt",
+        "num_tokens": 5
+    },
+    "batchsize": 128,
+    "optimizer": {
+        "name": "sgd",
+        "rate": 0.001,
+        "momentum": 0.9
+    },
+    "network": {
+        "name": "tied",
+        "hiddensize": 200,
+        "dropout": {
+            "prob": 0.2
+        }
+    }
+}]
