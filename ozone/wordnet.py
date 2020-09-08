@@ -76,9 +76,8 @@ def get_all_lemmas_from_sense(sense):
     for y in get_all_hyponyms_from_sense(sense):
         for lemma in y.lemmas():
             result.add(normalize_lemma(lemma.name()))
-    return result
-
-
+    return result    
+    
 
 class Specificity:
     def __init__(self):
@@ -145,12 +144,11 @@ class GetRandomSynset:
         return random.choice(other_synsets)
 
 
-
 def show_puzzles(puzzles):
     score = 0
     num_puzzles_seen = 0
     lives = 100
-    #"puzzle" variableis unshuffled, answer is always at puzzle[4] 
+    #"puzzle" variables unshuffled, answer is always at puzzle[4] 
     for puzzle in puzzles:
         num_puzzles_seen += 1 
         if lives == 0:
@@ -179,11 +177,40 @@ def show_puzzles(puzzles):
            print("\n INCORRECT")
            lives -= 1
 
+def flatness(sense):
+    print(get_hyponyms(sense))
+    num_direct_children = len(get_hyponyms(sense))
+    num_total_children = len(get_all_hyponyms_from_sense(wn.synset(sense)))
+    return num_direct_children / num_total_children
 
-
-if __name__ == "__main__":
-    generate_synset = GetRandomSynset('dog.n.1')
-    test_puzzles = generate_synset.generate_puzzles() 
-    print(len(test_puzzles))
+def get_all_hyponyms_from_sense_to_list(sense):
+    """
+    e.g. get_all_hyponyms_from_sense(wn.synset('metallic_element.n.01'))
     
+    """
+    result = []
+    for y in sense.hyponyms():
+        result.append(y)
+        for z in get_all_hyponyms_from_sense(y):
+            result.append(z)
+    return result
+
+
+class Repitition:
+    def __init__(self):
+        self.entity_hypos = self.generate_entity_hypos()
+    
+    def generate_entity_hypos(self):
+        entity = wn.synset("entity.n.1")
+        res = [hyp for hyp in get_all_hyponyms_from_sense_to_list(entity)]
+        return res
+    
+    def num_repititions_from_sense(self, sense):
+        return self.entity_hypos.count(sense)
+    
+# if __name__ == "__main__":
+#     generate_synset = GetRandomSynset('dog.n.1')
+#     test_puzzles = generate_synset.generate_puzzles() 
+#     print(len(test_puzzles))
+
     
