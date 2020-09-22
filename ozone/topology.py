@@ -1,0 +1,1 @@
+def flatness(self, node):    return self.get_direct_hyponyms(node) / self.get_all_hyponyms(node)def repetitions(self, node):     return self.get_all_hyponyms(self.get_root_synset).count(node)

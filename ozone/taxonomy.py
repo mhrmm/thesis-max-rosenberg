@@ -1,5 +1,4 @@
 import random
-import numpy as np
 from ozone.wordnet import GetRandomSynset
 from ozone.wordnet import get_all_lemmas_from_sense
 from ozone.puzzle import PuzzleGenerator
@@ -9,6 +8,15 @@ from nltk.corpus import wordnet as wn
 class Taxonomy:
     
     def get_vocab(self):
+        raise NotImplementedError("Cannot call this on an abstract class.")
+
+    def get_root_synset(self):
+        raise NotImplementedError("Cannot call this on an abstract class.")
+
+    def get_all_hyponyms(self, node):
+        raise NotImplementedError("Cannot call this on an abstract class.")
+
+    def get_direct_hyponyms(self, node):
         raise NotImplementedError("Cannot call this on an abstract class.")
 
     def random_node(self, specificity_lb, specificity_ub):
@@ -21,6 +29,33 @@ class Taxonomy:
         raise NotImplementedError("Cannot call this on an abstract class.")
 
 
+class BasicTaxonomy(Taxonomy):
+    """
+    ENTITY
+    -> FOOD
+    ---> FRUIT
+    -------> tomato
+    -------> orange
+    -------> grape
+    ---> VEGETABLE
+    -------> celery
+    -------> tomato
+    -> COLOR
+    ---> orange
+    ---> red
+    ---> green
+    ---> BLUES
+    -------> azure
+    -------> navy
+    
+    """
+    def __init__(self, input_representation):
+        pass
+    
+    # TODO: support the rest of the Taxonomy interface
+    
+    
+
 class WordnetTaxonomy(Taxonomy):
     
     def __init__(self, root_synset_name):
@@ -28,9 +63,24 @@ class WordnetTaxonomy(Taxonomy):
         self.root_synset = wn.synset(root_synset_name)
         self.synset_gen = GetRandomSynset(root_synset_name)
         self.vocab = self._build_vocab()
+
+    def get_root_synset(self):
+        return self.root_synset.name()
         
     def get_vocab(self):
         return self.vocab
+
+    def get_all_hyponyms(self, node):
+        result = set()
+        for y in node.hyponyms():
+            result.add(y)
+            for z in self.get_all_hyponyms(y):
+                result.add(z)
+        return result
+
+    def get_hyponyms(self, synset_name):
+        sense = wn.synset(synset_name)
+        return sense.hyponyms()
 
     def _build_vocab(self):
         words = sorted(list(get_all_lemmas_from_sense(self.root_synset)))
