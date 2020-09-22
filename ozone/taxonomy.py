@@ -11,6 +11,15 @@ class Taxonomy:
     def get_vocab(self):
         raise NotImplementedError("Cannot call this on an abstract class.")
 
+    def get_root_synset(self):
+        raise NotImplementedError("Cannot call this on an abstract class.")
+
+    def get_all_hyponyms(self, node):
+        raise NotImplementedError("Cannot call this on an abstract class.")
+
+    def get_direct_hyponyms(self, node):
+        raise NotImplementedError("Cannot call this on an abstract class.")
+
     def random_node(self, specificity_lb, specificity_ub):
         raise NotImplementedError("Cannot call this on an abstract class.")
 
@@ -20,6 +29,11 @@ class Taxonomy:
     def random_non_hyponym(self, node):
         raise NotImplementedError("Cannot call this on an abstract class.")
 
+    def flatness(self, node):
+        return self.get_direct_hyponyms(node) / self.get_all_hyponyms(node)
+
+    def repititions(self, node):
+        return self.get_all_hyponyms(self.get_root_synset).count(node)
 
 class WordnetTaxonomy(Taxonomy):
     
@@ -28,9 +42,24 @@ class WordnetTaxonomy(Taxonomy):
         self.root_synset = wn.synset(root_synset_name)
         self.synset_gen = GetRandomSynset(root_synset_name)
         self.vocab = self._build_vocab()
+
+    def get_root_synset(self):
+        return self.root_synset.name()
         
     def get_vocab(self):
         return self.vocab
+
+    def get_all_hyponyms(self, node):
+        result = set()
+        for y in node.hyponyms():
+            result.add(y)
+            for z in self.get_all_hyponyms(y):
+                result.add(z)
+        return result
+
+    def get_hyponyms(self, synset_name):
+        sense = wn.synset(synset_name)
+        return sense.hyponyms()
 
     def _build_vocab(self):
         words = sorted(list(get_all_lemmas_from_sense(self.root_synset)))
