@@ -21,6 +21,10 @@ class TestTaxonomy(unittest.TestCase):
                     'stayman winesap': 27, 'winesap': 28, 
                     'yellow delicious': 29}  
         assert self.taxonomy.get_vocab() == expected
+
+    def test_get_root_synset(self):
+        expected = "apple.n"
+        assert self.taxonomy.get_root_synset == expected
         
     def test_random_node(self):
         assert self.taxonomy.random_node(22,22) == 'eating_apple.n.01'
@@ -34,6 +38,17 @@ class TestTaxonomy(unittest.TestCase):
                         'newtown wonder',
                         'rome beauty'])
         result = set(self.taxonomy.random_hyponyms('cooking_apple.n.01', 5))
+        assert result == expected
+
+    def test_get_direct_hyponyms(self):
+        expected = set {[
+            "cooking_apple",
+            "newtown_wonder",
+            "lane's_prince_albert",
+            "bramley's_seedling",
+            "rome_beauty"
+        ]}
+        result = set(self.taxonomy.get_direct_hyponyms)
         assert result == expected
         
     def test_random_non_hyponym(self):
