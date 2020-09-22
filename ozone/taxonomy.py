@@ -32,7 +32,7 @@ class Taxonomy:
     def flatness(self, node):
         return self.get_direct_hyponyms(node) / self.get_all_hyponyms(node)
 
-    def repititions(self, node):
+    def repititions(self, node): 
         return self.get_all_hyponyms(self.get_root_synset).count(node)
 
 class WordnetTaxonomy(Taxonomy):
