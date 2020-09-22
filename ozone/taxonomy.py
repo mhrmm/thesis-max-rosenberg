@@ -1,5 +1,4 @@
 import random
-import numpy as np
 from ozone.wordnet import GetRandomSynset
 from ozone.wordnet import get_all_lemmas_from_sense
 from ozone.puzzle import PuzzleGenerator
@@ -29,11 +28,33 @@ class Taxonomy:
     def random_non_hyponym(self, node):
         raise NotImplementedError("Cannot call this on an abstract class.")
 
-    def flatness(self, node):
-        return self.get_direct_hyponyms(node) / self.get_all_hyponyms(node)
 
-    def repititions(self, node): 
-        return self.get_all_hyponyms(self.get_root_synset).count(node)
+class BasicTaxonomy(Taxonomy):
+    """
+    ENTITY
+    -> FOOD
+    ---> FRUIT
+    -------> tomato
+    -------> orange
+    -------> grape
+    ---> VEGETABLE
+    -------> celery
+    -------> tomato
+    -> COLOR
+    ---> orange
+    ---> red
+    ---> green
+    ---> BLUES
+    -------> azure
+    -------> navy
+    
+    """
+    def __init__(self, input_representation):
+        pass
+    
+    # TODO: support the rest of the Taxonomy interface
+    
+    
 
 class WordnetTaxonomy(Taxonomy):
     
