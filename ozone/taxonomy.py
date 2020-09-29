@@ -1,5 +1,4 @@
 import random
-import numpy as np
 # from ozone.animal import Animals
 from ozone.wordnet import GetRandomSynset
 from ozone.wordnet import get_all_lemmas_from_sense
@@ -136,6 +135,7 @@ class AnimalNet:
         for a in self.animal_list:
             if animal_name == a.name:
                 return a
+        print("Error with word ", animal_name)
         raise Exception("Couldn't find an animal with that name.")
 
 class BasicTaxonomy(Taxonomy):
@@ -174,23 +174,23 @@ class BasicTaxonomy(Taxonomy):
         for animal in shuffled_animals:
             spec = self.get_specificity(animal)
             if spec < specificity_ub and spec > specificity_lb:
-                return animal
+                return animal.name
         raise Exception("Couldn't find a node with specificity within the bounds")
 
     def random_hyponyms(self, node, k):
-        hyps = self.get_all_hyponyms(node) 
+        hyps = [hypo.name for hypo in self.get_all_hyponyms(node)]
         return random.sample(hyps, k)
 
     def random_non_hyponym(self, node):
         counter = 0
         node = self.an.get_animal(node)
         while (counter < 1000):
-            check_node = self.random_node(0, 10)
+            check_node = self.animals.get_animal(self.random_node(0, 10))
             hyps = self.get_all_hyponyms(node)
             if check_node.name == node.name or check_node in hyps:
                 counter += 1
             else:
-                return check_node
+                return check_node.name
 
 class WordnetTaxonomy(Taxonomy):
     
