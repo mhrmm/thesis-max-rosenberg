@@ -30,7 +30,10 @@ class Taxonomy:
         raise NotImplementedError("Cannot call this on an abstract class.")
 
     def flatness(self, node):
-        return self.get_hyponyms(node) / self.get_all_hyponyms(node)
+        num_total_hyps = len(self.get_all_hyponyms(node))
+        if num_total_hyps == 0:
+            return 0
+        return len(self.get_hyponyms(node)) / num_total_hyps
 
     def repititions(self, node): 
         return self.get_all_hyponyms(self.get_root_synset).count(node)
@@ -56,38 +59,72 @@ class AnimalWord:
     def get_name(self):
         return self.name
 
-class Animals:
+class AnimalNet:
     def __init__(self):
         self.animal_list = []
         animal = AnimalWord(name="animal")
+
         bird = AnimalWord(name="bird")
         mammal = AnimalWord(name="mammal")
+        reptile = AnimalWord(name="reptile")
+
         finch = AnimalWord(name="finch")
-        hummingbird = AnimalWord(name="hummingbird")
+        swallow = AnimalWord(name="swallow")
         dog = AnimalWord(name="dog")
         cat = AnimalWord(name="cat")
+        monkey = AnimalWord(name="monkey")
+        giraffe = AnimalWord(name="giraffe")
+        iguana = AnimalWord(name="iguana")
+
+        bulldog = AnimalWord(name="bulldog")
+        poodle = AnimalWord(name="poodle")
 
         animal.hyponyms.append(bird)
         animal.hyponyms.append(mammal)
-        bird.hyponyms.append(finch)
-        bird.hyponyms.append(hummingbird)
+        animal.hyponyms.append(reptile)
+
+
+
         mammal.hyponyms.append(dog)
         mammal.hyponyms.append(cat)
+        mammal.hyponyms.append(monkey)
+        mammal.hyponyms.append(giraffe)
+        mammal.hypernyms.append(animal)
+        
+        bird.hyponyms.append(finch)
+        bird.hyponyms.append(swallow)
+        bird.hypernyms.append(animal)
+
+        reptile.hyponyms.append(iguana)
+        reptile.hypernyms.append(animal)
+
+
 
         cat.hypernyms.append(mammal)
+        dog.hyponyms.append(bulldog)
+        dog.hyponyms.append(poodle)
         dog.hypernyms.append(mammal)
-        hummingbird.hypernyms.append(bird)
+        monkey.hypernyms.append(mammal)
+        giraffe.hypernyms.append(mammal)
+        swallow.hypernyms.append(bird)
         finch.hypernyms.append(bird)
-        bird.hypernyms.append(animal)
-        mammal.hypernyms.append(animal)
 
+        bulldog.hypernyms.append(dog)
+        poodle.hypernyms.append(dog)
+        
         self.animal_list.append(animal)
         self.animal_list.append(bird)
         self.animal_list.append(mammal)
+        self.animal_list.append(reptile)
         self.animal_list.append(finch)
-        self.animal_list.append(hummingbird)
+        self.animal_list.append(swallow)
         self.animal_list.append(dog)
         self.animal_list.append(cat)
+        self.animal_list.append(monkey)
+        self.animal_list.append(giraffe)
+        self.animal_list.append(iguana)
+        self.animal_list.append(bulldog)
+        self.animal_list.append(poodle)
         
         word_to_ix = dict([(v.name, k) for (k,v) in enumerate(self.animal_list)])
         print("vocab size: {}".format(len(word_to_ix)))
@@ -101,13 +138,13 @@ class Animals:
                 return a
         raise Exception("Couldn't find an animal with that name.")
 
-class AnimalTaxonomy(Taxonomy):
+class BasicTaxonomy(Taxonomy):
     '''Basic Taxonomy of Animals'''
     
     def __init__(self):
-        self.animals = Animals()
-        self.root_synset = self.animals.get_animal("animal")
-        self.vocab = self.animals.vocab
+        self.an = AnimalNet()
+        self.root_synset = self.an.get_animal("animal")
+        self.vocab = self.an.vocab
 
     def get_root_synset(self):
         return self.root_synset.get_name()
@@ -119,7 +156,7 @@ class AnimalTaxonomy(Taxonomy):
         return len(self.get_all_hyponyms(node)) + 1
 
     def get_hyponyms(self, node):
-        node = self.animals.get_animal(node)
+        node = self.an.get_animal(node)
         return node.hyponyms
 
     def get_all_hyponyms(self, node):
@@ -132,7 +169,7 @@ class AnimalTaxonomy(Taxonomy):
         return result
 
     def random_node(self,specificity_lb, specificity_ub):
-        shuffled_animals = self.animals.animal_list
+        shuffled_animals = self.an.animal_list
         random.shuffle(shuffled_animals)
         for animal in shuffled_animals:
             spec = self.get_specificity(animal)
@@ -146,7 +183,7 @@ class AnimalTaxonomy(Taxonomy):
 
     def random_non_hyponym(self, node):
         counter = 0
-        node = self.animals.get_animal(node)
+        node = self.an.get_animal(node)
         while (counter < 1000):
             check_node = self.random_node(0, 10)
             hyps = self.get_all_hyponyms(node)
@@ -246,5 +283,4 @@ class TaxonomyPuzzleGenerator(PuzzleGenerator):
         xyz = tuple([i for (i, _) in result])
         onehot = [j for (_, j) in result]    
         return (xyz, onehot.index(1))
-
     
