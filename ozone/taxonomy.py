@@ -1,7 +1,7 @@
 import random
-from ozone.animals import AnimalWord, AnimalNet
+from  animals import AnimalNet
 from ozone.wordnet import GetRandomSynset
-from ozone.wordnet import get_all_lemmas_from_sense
+from ozone.wordnet import get_all_lemmas_from_sense, hypernym_chain
 from ozone.puzzle import PuzzleGenerator
 from nltk.corpus import wordnet as wn
 
@@ -165,6 +165,36 @@ class WordnetTaxonomy(Taxonomy):
         random_word = random.choice(list(random_hyp_lemmas))
         return random_word
 
+    def similarity(self, node1, node2):
+        #get dicts of hypernym:distance from node to hypernym (AKA index of list)
+        node1_hypernym_distances = dict()
+        node1_hc = hypernym_chain(node1.name())
+        for h in node1_hc:
+            node1_hypernym_distances[h] = node1_hc.index(h)
+
+        node2_hypernym_distances = dict()
+        node2_hc = hypernym_chain(node2.name())
+        for h in node2_hc:
+            node2_hypernym_distances[h] = node2_hc.index(h)
+
+        #find common hypernyms
+        common = set(node1_hc) & set(node2_hc)
+
+        #get sums of distances of common hypernyms, return word with minimum sum
+        print(node1_hc, node2_hc)
+        candidates = dict()
+        for c in common:
+            candidates[c] = node1_hypernym_distances[c] + node2_hypernym_distances[c]
+            
+        lowest_common_ancestor = min(candidates, key=candidates.get)
+
+        node1_lca_distance = node1_hypernym_distances[lowest_common_ancestor]
+        node2_lca_distance = node2_hypernym_distances[lowest_common_ancestor]
+        node3_distance = len(hypernym_chain(lowest_common_ancestor.name())) - 1
+        numerator = 2 * node3_distance
+        denominator = node1_lca_distance + node2_lca_distance + (2 * node3_distance)
+        return numerator / denominator
+
 class TaxonomyPuzzleGenerator(PuzzleGenerator):
     
     def __init__(self, taxonomy, num_choices):
@@ -195,3 +225,9 @@ class TaxonomyPuzzleGenerator(PuzzleGenerator):
         onehot = [j for (_, j) in result]    
         return (xyz, onehot.index(1))
     
+if __name__ == "__main__":
+    print("got here")
+    wnt = WordnetTaxonomy(root_synset_name="entity.n.01")
+    print("then got here")
+    print(wnt.similarity(wn.synset("green.n.01"), wn.synset("ganja.n.01")))
+    print("also got here")
