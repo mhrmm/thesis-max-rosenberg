@@ -41,6 +41,8 @@ class DirectedGraph:
         return res
 
     def ancestors(self, vertex):
+        if vertex.name == "animal":
+            return []
         res = []
         curr = vertex
         while True:
@@ -73,6 +75,9 @@ class AnimalVertex:
 
     def __str__(self):
         return self.name
+
+    # def __repr__(self): # repr makes bugs less obvious
+    #     return self.name
 
     def get_name(self):
         return self.name
