@@ -1,5 +1,5 @@
 import random
-from  animals import AnimalNet
+from  ozone.animals import AnimalNet
 from ozone.wordnet import GetRandomSynset
 from ozone.wordnet import get_all_lemmas_from_sense, hypernym_chain
 from ozone.puzzle import PuzzleGenerator
@@ -168,9 +168,8 @@ class WordnetTaxonomy(Taxonomy):
                 result.add(z)
         return result
 
-    def get_children(self, synset_name):
-        sense = wn.synset(synset_name)
-        return sense.hyponyms()
+    def get_children(self, node):
+        return node.hyponyms()
 
     def _build_vocab(self):
         words = sorted(list(get_all_lemmas_from_sense(self.root_synset)))
@@ -191,6 +190,8 @@ class WordnetTaxonomy(Taxonomy):
     def random_descendents(self, node, k):
         node = wn.synset(node)
         hyps = get_all_lemmas_from_sense(node) # children?
+        if len(hyps) < k:
+            return None
         return random.sample(hyps, k)
     
     def random_non_descendent(self, node):
@@ -198,10 +199,11 @@ class WordnetTaxonomy(Taxonomy):
         hyps = get_all_lemmas_from_sense(node) # children?
         counter = 0
         random_hyp_lemmas = []
+        grs = GetRandomSynset(root_synset=self.root_synset.name())
         while len(random_hyp_lemmas) == 0:
             if counter > 10000:
                 raise Exception('Too difficult to get a non-hyponym for {}; giving up'.format(node.name()))
-            random_hyp = self.synset_gen.random_non_descendent(node.name())
+            random_hyp = grs.random_non_hyponym(node.name())
             random_hyp_lemmas = set(get_all_lemmas_from_sense(random_hyp))
             random_hyp_lemmas -= hyps
             counter += 1
@@ -237,6 +239,51 @@ class WordnetTaxonomy(Taxonomy):
         denominator = node1_lca_distance + node2_lca_distance + (2 * node3_distance)
         return numerator / denominator
 
+    def least_similar(self, nodes):
+        nodes = [node.replace(" ", "_") for node in nodes]
+        node1 = wn.synset(nodes[0] + ".n.01")
+        node2 = wn.synset(nodes[1] + ".n.01")
+        node3 = wn.synset(nodes[2] + ".n.01")
+        node4 = wn.synset(nodes[3] + ".n.01")
+        node5 = wn.synset(nodes[4] + ".n.01")
+        similarities = dict()
+        n1n2 = self.similarity(node1, node2)
+        n1n3 = self.similarity(node1, node3)
+        n1n4 = self.similarity(node1, node4)
+        n1n5 = self.similarity(node1, node5)
+        node1_sim = n1n2+n1n3+n1n4+n1n5
+        similarities[node1] = node1_sim
+
+        n2n1 = self.similarity(node2, node1)
+        n2n3 = self.similarity(node2, node3)
+        n2n4 = self.similarity(node2, node4)
+        n2n5 = self.similarity(node2, node5)
+        node2_sim = n2n1+n2n3+n2n4+n2n5
+        similarities[node2] = node2_sim
+
+        n3n1 = self.similarity(node3, node1)
+        n3n2 = self.similarity(node3, node2)
+        n3n4 = self.similarity(node3, node4)
+        n3n5 = self.similarity(node3, node5)
+        node3_sim = n3n1+n3n2+n3n4+n3n5
+        similarities[node3] = node3_sim
+
+        n4n1 = self.similarity(node4, node1)
+        n4n2 = self.similarity(node4, node2)
+        n4n3 = self.similarity(node4, node3)
+        n4n5 = self.similarity(node4, node5)
+        node4_sim = n4n1+n4n2+n4n3+n4n5
+        similarities[node4] = node4_sim
+
+        n5n1 = self.similarity(node5, node1)
+        n5n2 = self.similarity(node5, node2)
+        n5n3 = self.similarity(node5, node3)
+        n5n4 = self.similarity(node5, node4)
+        node5_sim = n5n1+n5n2+n5n3+n5n4
+        similarities[node5] = node5_sim
+        res = min(similarities, key=similarities.get)
+        return res.name()[:-5].replace("_"," ")
+
 class TaxonomyPuzzleGenerator(PuzzleGenerator):
     
     def __init__(self, taxonomy, num_choices):
@@ -259,6 +306,11 @@ class TaxonomyPuzzleGenerator(PuzzleGenerator):
         root = self.taxonomy.random_node(self.specificity_lb, 
                                          self.specificity_ub)
         puzzle = self.taxonomy.random_descendents(root, self.num_choices() - 1)
+        while not puzzle:
+            root = self.taxonomy.random_node(self.specificity_lb, 
+                                         self.specificity_ub)
+            puzzle = self.taxonomy.random_descendents(root, self.num_choices() - 1)
+        
         random_word = self.taxonomy.random_non_descendent(root)
         print('random word: ', random_word)
         puzzle.append(random_word)
@@ -268,7 +320,14 @@ class TaxonomyPuzzleGenerator(PuzzleGenerator):
         onehot = [j for (_, j) in result]    
         return (xyz, onehot.index(1))
     
-if __name__ == "__main__":
-    # wnt = WordnetTaxonomy(root_synset_name="entity.n.01")
-    # print(wnt.similarity(wn.synset("green.n.01"), wn.synset("ganja.n.01")))
-    bt = BasicTaxonomy()
+# if __name__ == "__main__":
+    wnt = WordnetTaxonomy(root_synset_name="apple.n.01")
+    print(wnt.similarity(wn.synset("red_delicious.n.01"), wn.synset("granny_smith.n.01")))
+    print(wnt.flatness(wn.synset("cooking_apple.n.01")))
+#     tpg = TaxonomyPuzzleGenerator(wnt, 5)
+
+#     for _ in range(5):
+#         test_puzzle = tpg.generate()
+#         print(test_puzzle)
+#         print("guess: ", wnt.least_similar(test_puzzle[0]))
+#         print("correct: ",test_puzzle[0][test_puzzle[1]])
