@@ -1,8 +1,5 @@
 import random
-<<<<<<< HEAD
-from  ozone.animals import AnimalNet
-=======
->>>>>>> upstream/master
+from ozone.animals import AnimalNet
 from ozone.wordnet import GetRandomSynset
 from ozone.wordnet import get_all_lemmas_from_sense, hypernym_chain
 from ozone.puzzle import PuzzleGenerator
