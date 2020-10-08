@@ -1,5 +1,8 @@
 import random
+<<<<<<< HEAD
 from  ozone.animals import AnimalNet
+=======
+>>>>>>> upstream/master
 from ozone.wordnet import GetRandomSynset
 from ozone.wordnet import get_all_lemmas_from_sense, hypernym_chain
 from ozone.puzzle import PuzzleGenerator
@@ -27,7 +30,6 @@ class Taxonomy:
         
     def random_non_descendent(self, node):
         raise NotImplementedError("Cannot call this on an abstract class.")
-
 
     def hypernym_chain(self, node):
         result = [node]
@@ -151,6 +153,7 @@ class AnimalTaxonomy(Taxonomy):
 
 
     
+
 
     
 
