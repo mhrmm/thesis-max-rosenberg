@@ -10,7 +10,7 @@ class Taxonomy:
     def get_vocab(self):
         raise NotImplementedError("Cannot call this on an abstract class.")
 
-    def get_root_synset(self):
+    def get_root_node(self):
         raise NotImplementedError("Cannot call this on an abstract class.")
 
     def get_descendents(self, node):
@@ -28,22 +28,35 @@ class Taxonomy:
     def random_non_descendent(self, node):
         raise NotImplementedError("Cannot call this on an abstract class.")
 
+
     def hypernym_chain(self, node):
-        raise NotImplementedError("Cannot call this on an abstract class.")
+        result = [node]
+        while len(self.ancestors(node)) > 0:
+            node = self.ancestors(node)[0]
+            result.append(node)
+        return result
 
     def flatness(self, node):
+        """Put comment describing the metric. """
         num_total_hyps = len(self.get_descendents(node))
         if num_total_hyps == 0:
             return 0
         return len(self.get_children(node)) / num_total_hyps
 
-    def repititions(self, node): 
-        if node == self.get_root_synset():
-            return self.get_descendents(self.get_root_synset()).count(node) + 1
+    def repetitions(self, node):
+        """Put comment describing the I/O. """
+        if node == self.get_root_node():
+            return self.get_descendents(self.get_root_node()).count(node) + 1
         else:
-            return self.get_descendents(self.get_root_synset()).count(node)
+            return self.get_descendents(self.get_root_node()).count(node)
 
-    def similarity(self, node1, node2):
+    def wu_palmer_similarity(self, node1, node2):
+        """
+        Similarity metric from Wu and Palmer (1994).
+
+        TODO: put in description of metric.
+
+        """
         #get dicts of hypernym:distance from node to hypernym (AKA index of list)
         node1_hypernym_distances = dict()
         node1_hc = self.hypernym_chain(node1)
@@ -73,7 +86,7 @@ class Taxonomy:
         return numerator / denominator
 
 
-class BasicTaxonomy(Taxonomy):
+class AnimalTaxonomy(Taxonomy):
     '''Basic Taxonomy of Animals'''
     
     def __init__(self):
@@ -81,7 +94,7 @@ class BasicTaxonomy(Taxonomy):
         self.root_synset = self.an.get_animal("animal")
         self.vocab = self.an.graph.vocab
 
-    def get_root_synset(self):
+    def get_root_node(self):
         return self.root_synset.get_name()
 
     def get_vocab(self):
@@ -121,12 +134,12 @@ class BasicTaxonomy(Taxonomy):
             else:
                 return check_node
 
-    def repititions(self, node):
+    def repetitions(self, node):
         node = self.an.get_animal(node)
-        if node.name == self.get_root_synset():
-            return self.get_descendents(self.get_root_synset()).count(node.get_name()) + 1
+        if node.name == self.get_root_node():
+            return self.get_descendents(self.get_root_node()).count(node.get_name()) + 1
 
-        return self.get_descendents(self.get_root_synset()).count(node.get_name())
+        return self.get_descendents(self.get_root_node()).count(node.get_name())
 
     def ancestors(self, node):
         node_obj = self.an.get_animal(node)
@@ -135,12 +148,7 @@ class BasicTaxonomy(Taxonomy):
             result.append(y.get_name())
         return result
 
-    def hypernym_chain(self, node):
-        result = [node]
-        while len(self.ancestors(node)) > 0:
-            node = self.ancestors(node)[0]
-            result.append(node)
-        return result
+
 
     
 
@@ -154,7 +162,7 @@ class WordnetTaxonomy(Taxonomy):
         self.synset_gen = GetRandomSynset(root_synset_name)
         self.vocab = self._build_vocab()
 
-    def get_root_synset(self):
+    def get_root_node(self):
         return self.root_synset.name()
         
     def get_vocab(self):
@@ -210,34 +218,6 @@ class WordnetTaxonomy(Taxonomy):
         random_word = random.choice(list(random_hyp_lemmas))
         return random_word
 
-    def similarity(self, node1, node2):
-        #get dicts of hypernym:distance from node to hypernym (AKA index of list)
-        node1_hypernym_distances = dict()
-        node1_hc = hypernym_chain(node1.name())
-        for h in node1_hc:
-            node1_hypernym_distances[h] = node1_hc.index(h)
-
-        node2_hypernym_distances = dict()
-        node2_hc = hypernym_chain(node2.name())
-        for h in node2_hc:
-            node2_hypernym_distances[h] = node2_hc.index(h)
-
-        #find common hypernyms
-        common = set(node1_hc) & set(node2_hc)
-
-        #get sums of distances of common hypernyms, return word with minimum sum
-        candidates = dict()
-        for c in common:
-            candidates[c] = node1_hypernym_distances[c] + node2_hypernym_distances[c]
-            
-        lowest_common_ancestor = min(candidates, key=candidates.get)
-
-        node1_lca_distance = node1_hypernym_distances[lowest_common_ancestor]
-        node2_lca_distance = node2_hypernym_distances[lowest_common_ancestor]
-        node3_distance = len(hypernym_chain(lowest_common_ancestor.name())) - 1
-        numerator = 2 * node3_distance
-        denominator = node1_lca_distance + node2_lca_distance + (2 * node3_distance)
-        return numerator / denominator
 
     def least_similar(self, nodes):
         nodes = [node.replace(" ", "_") for node in nodes]
@@ -247,38 +227,38 @@ class WordnetTaxonomy(Taxonomy):
         node4 = wn.synset(nodes[3] + ".n.01")
         node5 = wn.synset(nodes[4] + ".n.01")
         similarities = dict()
-        n1n2 = self.similarity(node1, node2)
-        n1n3 = self.similarity(node1, node3)
-        n1n4 = self.similarity(node1, node4)
-        n1n5 = self.similarity(node1, node5)
+        n1n2 = self.wu_palmer_similarity(node1, node2)
+        n1n3 = self.wu_palmer_similarity(node1, node3)
+        n1n4 = self.wu_palmer_similarity(node1, node4)
+        n1n5 = self.wu_palmer_similarity(node1, node5)
         node1_sim = n1n2+n1n3+n1n4+n1n5
         similarities[node1] = node1_sim
 
-        n2n1 = self.similarity(node2, node1)
-        n2n3 = self.similarity(node2, node3)
-        n2n4 = self.similarity(node2, node4)
-        n2n5 = self.similarity(node2, node5)
+        n2n1 = self.wu_palmer_similarity(node2, node1)
+        n2n3 = self.wu_palmer_similarity(node2, node3)
+        n2n4 = self.wu_palmer_similarity(node2, node4)
+        n2n5 = self.wu_palmer_similarity(node2, node5)
         node2_sim = n2n1+n2n3+n2n4+n2n5
         similarities[node2] = node2_sim
 
-        n3n1 = self.similarity(node3, node1)
-        n3n2 = self.similarity(node3, node2)
-        n3n4 = self.similarity(node3, node4)
-        n3n5 = self.similarity(node3, node5)
+        n3n1 = self.wu_palmer_similarity(node3, node1)
+        n3n2 = self.wu_palmer_similarity(node3, node2)
+        n3n4 = self.wu_palmer_similarity(node3, node4)
+        n3n5 = self.wu_palmer_similarity(node3, node5)
         node3_sim = n3n1+n3n2+n3n4+n3n5
         similarities[node3] = node3_sim
 
-        n4n1 = self.similarity(node4, node1)
-        n4n2 = self.similarity(node4, node2)
-        n4n3 = self.similarity(node4, node3)
-        n4n5 = self.similarity(node4, node5)
+        n4n1 = self.wu_palmer_similarity(node4, node1)
+        n4n2 = self.wu_palmer_similarity(node4, node2)
+        n4n3 = self.wu_palmer_similarity(node4, node3)
+        n4n5 = self.wu_palmer_similarity(node4, node5)
         node4_sim = n4n1+n4n2+n4n3+n4n5
         similarities[node4] = node4_sim
 
-        n5n1 = self.similarity(node5, node1)
-        n5n2 = self.similarity(node5, node2)
-        n5n3 = self.similarity(node5, node3)
-        n5n4 = self.similarity(node5, node4)
+        n5n1 = self.wu_palmer_similarity(node5, node1)
+        n5n2 = self.wu_palmer_similarity(node5, node2)
+        n5n3 = self.wu_palmer_similarity(node5, node3)
+        n5n4 = self.wu_palmer_similarity(node5, node4)
         node5_sim = n5n1+n5n2+n5n3+n5n4
         similarities[node5] = node5_sim
         res = min(similarities, key=similarities.get)
@@ -319,10 +299,10 @@ class TaxonomyPuzzleGenerator(PuzzleGenerator):
         xyz = tuple([i for (i, _) in result])
         onehot = [j for (_, j) in result]    
         return (xyz, onehot.index(1))
-    
-# if __name__ == "__main__":
+
+if __name__ == "__main__":
     wnt = WordnetTaxonomy(root_synset_name="apple.n.01")
-    print(wnt.similarity(wn.synset("red_delicious.n.01"), wn.synset("granny_smith.n.01")))
+    print(wnt.wu_palmer_similarity(wn.synset("red_delicious.n.01"), wn.synset("granny_smith.n.01")))
     print(wnt.flatness(wn.synset("cooking_apple.n.01")))
 #     tpg = TaxonomyPuzzleGenerator(wnt, 5)
 

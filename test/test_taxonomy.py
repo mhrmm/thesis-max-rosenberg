@@ -23,9 +23,9 @@ class TestTaxonomy(unittest.TestCase):
                     'yellow delicious': 29}  
         assert self.taxonomy.get_vocab() == expected
 
-    def test_get_root_synset(self):
+    def test_get_root_node(self):
         expected = "apple.n.01"        
-        assert self.taxonomy.get_root_synset() == expected
+        assert self.taxonomy.get_root_node() == expected
         
     def test_random_node(self):
         assert self.taxonomy.random_node(22,22) == 'eating_apple.n.01'
@@ -47,7 +47,7 @@ class TestTaxonomy(unittest.TestCase):
             "crab_apple.n.03",
             "eating_apple.n.01"
         ])
-        result = set([x.name() for x in self.taxonomy.get_children(("apple.n.01"))])
+        result = set([x.name() for x in self.taxonomy.get_children(wn.synset("apple.n.01"))])
         #print(result)
         assert result == expected
         
@@ -63,10 +63,12 @@ class TestTaxonomy(unittest.TestCase):
             non_descendent = self.taxonomy.random_non_descendent('eating_apple.n.01')
             assert non_descendent in non_eating_apples
 
-    def test_similarity(self):
-        sim1 = self.taxonomy.similarity(wn.synset("cooking_apple.n.01"), wn.synset("crab_apple.n.01"))
+    def test_wu_palmer_similarity(self):
+        sim1 = self.taxonomy.wu_palmer_similarity(wn.synset("cooking_apple.n.01"),
+                                                  wn.synset("crab_apple.n.01"))
         assert sim1 == 0.25
-        sim2 = self.taxonomy.similarity(wn.synset("red_delicious.n.01"), wn.synset("granny_smith.n.01"))
+        sim2 = self.taxonomy.wu_palmer_similarity(wn.synset("red_delicious.n.01"),
+                                                  wn.synset("granny_smith.n.01"))
         assert sim2 == 0.88
             
     def test_puzzle_gen(self):

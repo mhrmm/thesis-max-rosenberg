@@ -1,53 +1,55 @@
 import unittest
-from ozone.taxonomy import BasicTaxonomy, AnimalNet, AnimalWord
+from ozone.taxonomy import AnimalTaxonomy, AnimalNet
 
 class TestBasicTaxonomy(unittest.TestCase):
     
     def setUp(self):
-        self.taxonomy = BasicTaxonomy()   
+        self.taxonomy = AnimalTaxonomy()
 
     def test_get_vocab(self):
-        expected = {'animal': 0, 'bird': 1, 'mammal': 2, 'finch': 3, 'hummingbird': 4, 'dog': 5, 'cat': 6}
-        return self.taxonomy.get_vocab == expected
+        expected = {'animal': 0, 'bird': 1, 'mammal': 2, 'reptile': 3,
+                    'finch': 4, 'swallow': 5, 'dog': 6, 'cat': 7,
+                    'monkey': 8, 'giraffe': 9, 'iguana': 10, 'bulldog': 11,
+                    'poodle': 12}
+        assert self.taxonomy.get_vocab() == expected
 
     def test_get_root_synset(self):
         expected = "animal"
-        assert self.taxonomy.get_root_synset() == expected
+        assert self.taxonomy.get_root_node() == expected
 
     def test_random_node(self):
         assert self.taxonomy.random_node(10,14) == 'animal'
         ani = self.taxonomy.random_node(1,3)
         assert ani == 'reptile'
 
-    def test_random_hyponyms(self):
+    def test_random_descendents(self):
         expected = set(['bulldog', 'poodle'])
-        result = set(self.taxonomy.random_hyponyms('dog', 2))
+        result = set(self.taxonomy.random_descendents('dog', 2))
         assert result == expected
-
         expected1 = set(['finch'])
         expected2 = set(['swallow'])
-        result = set(self.taxonomy.random_hyponyms('bird', 1))
+        result = set(self.taxonomy.random_descendents('bird', 1))
         assert result == expected1 or result == expected2
 
-    def test_random_non_hyponyms(self):
+    def test_random_non_descendent(self):
         non_birds = {'dog', 'monkey', 'reptile', 'cat', 
-                    'animal', 'mammal', 'iguana', 'poodle', 
-                    'bulldog', 'giraffe'}
+                     'animal', 'mammal', 'iguana', 'poodle',
+                     'bulldog', 'giraffe'}
         for _ in range(10):
-            non_hyponym = self.taxonomy.random_non_hyponym('bird')
+            non_hyponym = self.taxonomy.random_non_descendent('bird')
             assert non_hyponym in non_birds
 
     def test_flatness(self):
         assert self.taxonomy.flatness("dog") == 1
         assert self.taxonomy.flatness("mammal") == 2/3
-        assert self.taxonomy.flatness ("animal") == 1/4
+        assert self.taxonomy.flatness("animal") == 1/4
 
-    def test_reptitions(self):
-        assert self.taxonomy.repititions('animal') == 1
-        assert self.taxonomy.repititions('mammal') == 1
-        assert self.taxonomy.repititions('dog') == 1
-        assert self.taxonomy.repititions('bulldog') == 1
+    def test_repetitions(self):
+        assert self.taxonomy.repetitions('animal') == 1
+        assert self.taxonomy.repetitions('mammal') == 1
+        assert self.taxonomy.repetitions('dog') == 1
+        assert self.taxonomy.repetitions('bulldog') == 1
 
         
 if __name__ == "__main__":
-	unittest.main()
+    unittest.main()
