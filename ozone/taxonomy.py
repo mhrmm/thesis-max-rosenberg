@@ -313,33 +313,3 @@ class TaxonomyPuzzleGenerator(PuzzleGenerator):
         xyz = tuple([i for (i, _) in result])
         onehot = [j for (_, j) in result]    
         return (xyz, onehot.index(1))
-
-if __name__ == "__main__":
-    wnt = WordnetTaxonomy(root_synset_name="entity.n.01")
-    #print(wnt.random_non_descendent('cooking_apple.n.01'))
-    #print(wnt.rosenberg_descendent_similarity('cooking_apple.n.01'))
-    # print(wnt.random_node(0, 10))
-    #print(wnt.get_specificity("cooking_apple.n.01"))
-    #print(wnt.random_node(19,19))
-
-    ant = AnimalTaxonomy()
-    # print(ant.get_ancestors("poodle"))
-    #print(ant.wu_palmer_similarity("poodle", "dog"))
-    # print(wnt.get_ancestors("coast.n.01"))
-    print(wnt.wu_palmer_similarity(("coast.n.01"),("hill.n.01")))
-    print(wnt.get_ancestors("geological_formation.n.01"))
-    #print(wnt.wu_palmer_similarity(("chord.n.01"),("smile.n.01")))
-    #print(wnt.wu_palmer_similarity(("glass.n.01"),("magician.n.01")))
-    #print(wnt.wu_palmer_similarity(("noon.n.01"),("string.n.01")))
-    #print(wnt.get_ancestors("coast.n.01"))
-    # print(wnt.flatness(wn.synset("cooking_apple.n.01")))
-    # print("vehicle: ", wnt.rosenberg_descendent_similarity("vehicle.n.01"))
-    #print("container: ", wnt.rosenberg_descendent_similarity("container.n.01"))
-    #print("vehicle: ", wnt.rosenberg_descendent_similarity("vehicle.n.01"))
-#     tpg = TaxonomyPuzzleGenerator(wnt, 5)
-
-#     for _ in range(5):
-#         test_puzzle = tpg.generate()
-#         print(test_puzzle)
-#         print("guess: ", wnt.least_similar(test_puzzle[0]))
-#         print("correct: ",test_puzzle[0][test_puzzle[1]])
