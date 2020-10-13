@@ -79,7 +79,7 @@ class AnimalVertex:
     # def __repr__(self): # repr makes bugs less obvious
     #     return self.name
 
-    def get_name(self):
+    def name(self):
         return self.name
 
 class AnimalNet:

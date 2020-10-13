@@ -28,17 +28,16 @@ class TestTaxonomy(unittest.TestCase):
         assert self.taxonomy.get_root_node() == expected
         
     def test_random_node(self):
-        assert self.taxonomy.random_node(22,22) == 'eating_apple.n.01'
-        assert self.taxonomy.random_node(5,5) == 'cooking_apple.n.01'
-        assert self.taxonomy.random_node(6,21) == None
+        assert self.taxonomy.random_node(19,19) == 'eating_apple.n.01'
+        assert self.taxonomy.random_node(4,4) == 'cooking_apple.n.01'
+        assert self.taxonomy.random_node(6,21) != None
         
     def test_random_descendents(self):
-        expected = set(["lane's prince albert",
-                        "bramley's seedling",
-                        'cooking apple',
-                        'newtown wonder',
-                        'rome beauty'])
-        result = set(self.taxonomy.random_descendents('cooking_apple.n.01', 5))
+        expected = set(["lane's_prince_albert.n.01",
+                        "bramley's_seedling.n.01",
+                        'newtown_wonder.n.01',
+                        'rome_beauty.n.01'])
+        result = set(self.taxonomy.random_descendents('cooking_apple.n.01', 4))
         assert result == expected
 
     def test_get_children(self):
@@ -47,39 +46,41 @@ class TestTaxonomy(unittest.TestCase):
             "crab_apple.n.03",
             "eating_apple.n.01"
         ])
-        result = set([x.name() for x in self.taxonomy.get_children(wn.synset("apple.n.01"))])
+        result = set([x for x in self.taxonomy.get_children("apple.n.01")])
         #print(result)
         assert result == expected
         
     def test_random_non_descendent(self):
-        non_eating_apples = {"bramley's seedling",
-                             'cooking apple',
-                             'crab apple',
-                             'crabapple',
-                             "lane's prince albert",
-                             'newtown wonder',
-                             'rome beauty'}
+        non_eating_apples = ["bramley's_seedling.n.01",
+                             'cooking_apple.n.01',
+                             'crab_apple.n.01',
+                             'crabapple.n.01',
+                             'crab_apple.n.03',
+                             "lane's_prince_albert.n.01",
+                             'newtown_wonder.n.01',
+                             'rome_beauty.n.01',
+                             'cooking_apple.n.01']
         for _ in range(10):
             non_descendent = self.taxonomy.random_non_descendent('eating_apple.n.01')
             assert non_descendent in non_eating_apples
 
     def test_wu_palmer_similarity(self):
-        sim1 = self.taxonomy.wu_palmer_similarity(wn.synset("cooking_apple.n.01"),
-                                                  wn.synset("crab_apple.n.01"))
+        sim1 = self.taxonomy.wu_palmer_similarity(("cooking_apple.n.01"),
+                                                  ("crab_apple.n.01"))
         assert sim1 == 0.25
-        sim2 = self.taxonomy.wu_palmer_similarity(wn.synset("red_delicious.n.01"),
-                                                  wn.synset("granny_smith.n.01"))
+        sim2 = self.taxonomy.wu_palmer_similarity(("red_delicious.n.01"),
+                                                  ("granny_smith.n.01"))
         assert sim2 == 0.88
             
     def test_puzzle_gen(self):
-        cooking_apples = set(["lane's prince albert",
-                              "bramley's seedling",
-                              'cooking apple',
-                              'newtown wonder',
-                              'rome beauty'])
+        cooking_apples = set(["lane's_prince_albert.n.01",
+                              "bramley's_seedling.n.01",
+                              'cooking_apple.n.01',
+                              'newtown_wonder.n.01',
+                              'rome_beauty.n.01'])
         puzzgen = TaxonomyPuzzleGenerator(self.taxonomy, 4)
-        puzzgen.specificity_lb = 5
-        puzzgen.specificity_ub = 5
+        puzzgen.specificity_lb = 4
+        puzzgen.specificity_ub = 4
         for i in range(100):
             (choices, oddman) = puzzgen.generate()
             assert len(set(choices)) == len(choices)
