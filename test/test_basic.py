@@ -1,10 +1,34 @@
 import unittest
-from ozone.taxonomy import AnimalTaxonomy, AnimalNet
+from ozone.taxonomy import AnimalTaxonomy, InstanceNode, CategoryNode, TaxonomyNode, Taxonomy
 
 class TestBasicTaxonomy(unittest.TestCase):
     
     def setUp(self):
-        self.taxonomy = AnimalTaxonomy()
+        animal = CategoryNode("animal")
+        bird = CategoryNode("bird")
+        mammal = CategoryNode("mammal")
+        reptile = CategoryNode("reptile")
+
+        finch = InstanceNode("finch")
+        swallow = InstanceNode("swallow")
+        dog = CategoryNode("dog")
+        cat = InstanceNode("cat")
+        monkey = InstanceNode("monkey")
+        giraffe = InstanceNode("giraffe")
+        iguana = InstanceNode("iguana")
+
+        bulldog = InstanceNode("bulldog")
+        poodle = InstanceNode("poodle")
+
+        vertices = [animal, bird, mammal, reptile, finch, swallow, dog,
+                        cat, monkey, giraffe, iguana, bulldog, poodle]
+
+        edges = [(animal, bird), (animal, mammal), (animal, reptile),
+                (mammal, dog), (mammal, cat), (mammal, monkey),
+                (mammal, giraffe), (bird, finch), (bird, swallow),
+                (reptile, iguana), (dog, bulldog), (dog, poodle)]
+
+        self.taxonomy = AnimalTaxonomy(vertices, edges, animal)
 
     def test_get_vocab(self):
         expected = {'animal': 0, 'bird': 1, 'mammal': 2, 'reptile': 3,
@@ -18,9 +42,7 @@ class TestBasicTaxonomy(unittest.TestCase):
         assert self.taxonomy.get_root_node() == expected
 
     def test_random_node(self):
-        assert self.taxonomy.random_node(10,14) == 'animal'
-        ani = self.taxonomy.random_node(1,3)
-        assert ani == 'reptile'
+        assert self.taxonomy.random_node(11,13) == 'animal'
 
     def test_random_descendents(self):
         expected = set(['bulldog', 'poodle'])
