@@ -21,11 +21,11 @@ class Taxonomy:
     def get_root(self):
         raise NotImplementedError('Cannot call this method on abstract class.')
 
-    def get_children(self, node):
-        raise NotImplementedError('Cannot call this method on abstract class.')
+    def get_categories(self):
+        return NotImplementedError('Cannot call this method on abstract class.')
 
-    def get_parents(self, node):
-        raise NotImplementedError('Cannot call this method on abstract class.')
+    def get_instances(self):
+        return NotImplementedError('Cannot call this method on abstract class.')
 
     def get_ancestor_categories(self, node):
         raise NotImplementedError('Cannot call this method on abstract class.')
@@ -45,9 +45,6 @@ class Specificity:
         return self.cache[category]
 
 
-specificity = Specificity()
-
-
 def lowest_common_ancestor(taxonomy, words, target):
     target_ancestors = taxonomy.get_ancestor_categories(target)
     common_ancestors = taxonomy.get_ancestor_categories(words[0])
@@ -57,7 +54,7 @@ def lowest_common_ancestor(taxonomy, words, target):
     common_ancestors = common_ancestors - target_ancestors
     if len(common_ancestors) == 0:
         return taxonomy.num_instances(), taxonomy.get_root()
-    scored_ancestors = [(specificity(taxonomy, hyp), hyp)
+    scored_ancestors = [(taxonomy.get_specificity(hyp), hyp)
                         for hyp in common_ancestors]
     sorted_ancestors = sorted(scored_ancestors)
     return sorted_ancestors[0]
@@ -66,6 +63,7 @@ def lowest_common_ancestor(taxonomy, words, target):
 class GraphTaxonomy:
 
     def __init__(self, root, parents):
+        self.specificity = Specificity()
         self.root = root
         self.parents = parents
         self.children = defaultdict(list)
@@ -86,6 +84,12 @@ class GraphTaxonomy:
     def get_root(self):
         return self.root
 
+    def get_categories(self):
+        return self.children.keys()
+
+    def get_instances(self):
+        return self.parents.keys() - self.children.keys()
+
     def get_children(self, node):
         if node not in self.children:
             return []
@@ -97,6 +101,9 @@ class GraphTaxonomy:
             return []
         else:
             return self.parents[node]
+
+    def get_specificity(self, category):
+        return self.specificity(self, category)
 
     def get_ancestor_categories(self, node):
         result = set()

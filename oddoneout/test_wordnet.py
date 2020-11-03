@@ -39,33 +39,31 @@ class TestWordnet(unittest.TestCase):
                     'living_thing.n.01', 'material.n.01', 'matter.n.03',
                     'natural_object.n.01', 'object.n.01', 'orange.n.01',
                     'orange.n.02', 'orange.n.03', 'orange.n.04',
-                    'orange.n.05', 'orange.s.01', 'organism.n.01',
-                    'physical_entity.n.01', 'pigment.n.01', 'plant.n.02',
-                    'plant_organ.n.01', 'plant_part.n.01', 'property.n.02',
-                    'reproductive_structure.n.01', 'substance.n.01',
-                    'tree.n.01', 'vascular_plant.n.01', 'visual_property.n.01',
-                    'whole.n.02', 'woody_plant.n.01']
+                    'organism.n.01', 'physical_entity.n.01', 'pigment.n.01',
+                    'plant.n.02', 'plant_organ.n.01', 'plant_part.n.01',
+                    'property.n.02', 'reproductive_structure.n.01',
+                    'substance.n.01', 'tree.n.01', 'vascular_plant.n.01',
+                    'visual_property.n.01', 'whole.n.02', 'woody_plant.n.01']
         assert sorted(result) == expected
-        #assert result == expected
-        #print(self.taxonomy.num_instances())
 
     def test_descendant_instances1(self):
         result = self.taxonomy.get_descendant_instances('apple.n.01')
-        expected = ['Baldwin', "Bramley's_Seedling", 'Cortland',
-                    "Cox's_Orange_Pippin", 'Delicious', 'Empire',
-                    'Golden_Delicious', 'Granny_Smith', "Grimes'_golden",
-                    'Jonathan', "Lane's_Prince_Albert", 'Macoun',
-                    'McIntosh', 'Newtown_Wonder', 'Northern_Spy',
-                    'Pearmain', 'Pippin', 'Prima', 'Red_Delicious',
-                    'Rome_Beauty', 'Stayman', 'Stayman_Winesap', 'Winesap',
-                    'Yellow_Delicious', 'cooking_apple', 'crab_apple',
-                    'crabapple', 'dessert_apple', 'eating_apple']
+        expected = ['Baldwin', "Bramley's Seedling", 'Cortland',
+                    "Cox's Orange Pippin", 'Delicious', 'Empire',
+                    'Golden Delicious', 'Granny Smith', "Grimes' golden",
+                    'Jonathan', "Lane's Prince Albert", 'Macoun',
+                    'McIntosh', 'Newtown Wonder', 'Northern Spy',
+                    'Pearmain', 'Pippin', 'Prima', 'Red Delicious',
+                    'Rome Beauty', 'Stayman', 'Stayman Winesap', 'Winesap',
+                    'Yellow Delicious', 'cooking apple', 'crab apple',
+                    'crabapple', 'dessert apple', 'eating apple']
+        expected = sorted([x.lower() for x in expected])
         assert sorted(result) == expected
 
     def test_descendant_instances2(self):
         result = self.taxonomy.get_descendant_instances('poodle.n.01')
-        expected = ['large_poodle', 'miniature_poodle',
-                    'standard_poodle', 'toy_poodle']
+        expected = ['large poodle', 'miniature poodle',
+                    'standard poodle', 'toy poodle']
         assert sorted(result) == expected
 
     def test_lowest_common_ancestor1(self):
@@ -78,20 +76,20 @@ class TestWordnet(unittest.TestCase):
         result = lowest_common_ancestor(self.taxonomy,
                                         ['orange', 'red', 'green', 'blue'],
                                         'gold')
-        assert result == (104999, 'entity.n.01')
+        assert result == (104363, 'entity.n.01')
 
     def test_lowest_common_ancestor3(self):
         result = lowest_common_ancestor(self.taxonomy,
-                                        ['large_poodle', 'miniature_poodle',
-                                         'standard_poodle', 'toy_poodle'],
+                                        ['large poodle', 'miniature poodle',
+                                         'standard poodle', 'toy poodle'],
                                         'beagle')
         assert result == (4, 'poodle.n.01')
 
     def test_solve_puzzle(self):
         similarity = TaxonomySimilarity(self.taxonomy)
         puzzle = OddOneOutPuzzle("beagle",
-                                 ['large_poodle', 'miniature_poodle',
-                                  'standard_poodle', 'toy_poodle'],
+                                 ['large poodle', 'miniature poodle',
+                                  'standard poodle', 'toy poodle'],
                                  "poodle")
         result = solve_puzzle(puzzle, similarity)
         assert result == (0.25, 'poodle.n.01', 'beagle')
@@ -99,6 +97,61 @@ class TestWordnet(unittest.TestCase):
     def test_solve_puzzles(self):
         similarity = TaxonomySimilarity(self.taxonomy)
         result = solve_puzzles(common2_puzzles, similarity, logger=silent_logger)
-        assert result == (38, 14, 50)
+        assert result == (35, 13, 54)
 
 
+class TestWordnetSubset(unittest.TestCase):
+    def setUp(self):
+        self.taxonomy = WordnetTaxonomy('poodle.n.01')
+
+    def test_get_categories(self):
+        assert self.taxonomy.get_categories() == {'poodle.n.01',
+                                                  'standard_poodle.n.01',
+                                                  'large_poodle.n.01',
+                                                  'miniature_poodle.n.01',
+                                                  'toy_poodle.n.01'}
+
+    def test_is_instance(self):
+        assert not self.taxonomy.is_instance('apple')
+        assert self.taxonomy.is_instance('toy poodle')
+        assert not self.taxonomy.is_instance('dog.n.01')
+        assert not self.taxonomy.is_instance('dogfdsa')
+
+    def test_is_category(self):
+        assert not self.taxonomy.is_category('apple')
+        assert not self.taxonomy.is_category('dog')
+        assert self.taxonomy.is_category('standard_poodle.n.01')
+        assert not self.taxonomy.is_category('apple.n.01')
+        assert not self.taxonomy.is_category('doggo.n.01')
+
+
+class TestWordnetSubset2(unittest.TestCase):
+    def setUp(self):
+        self.taxonomy = WordnetTaxonomy('dog.n.01')
+
+    def test_ancestor_categories(self):
+        result = self.taxonomy.get_ancestor_categories('toy_poodle.n.01')
+        expected = ['dog.n.01', 'poodle.n.01', 'toy_poodle.n.01']
+        assert sorted(result) == expected
+
+    def test_descendant_instances(self):
+        result = self.taxonomy.get_descendant_instances('poodle.n.01')
+        expected = ['large poodle', 'miniature poodle',
+                    'standard poodle', 'toy poodle']
+        assert sorted(result) == expected
+
+    def test_lowest_common_ancestor(self):
+        result = lowest_common_ancestor(self.taxonomy,
+                                        ['large poodle', 'miniature poodle',
+                                         'standard poodle', 'toy poodle'],
+                                        'beagle')
+        assert result == (4, 'poodle.n.01')
+
+    def test_solve_puzzle(self):
+        similarity = TaxonomySimilarity(self.taxonomy)
+        puzzle = OddOneOutPuzzle("beagle",
+                                 ['large poodle', 'miniature poodle',
+                                  'standard poodle', 'toy poodle'],
+                                 "poodle")
+        result = solve_puzzle(puzzle, similarity)
+        assert result == (0.25, 'poodle.n.01', 'beagle')

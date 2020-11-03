@@ -46,7 +46,6 @@ def generate_puzzle(category_map, category):
     an odd-man-out puzzle whose theme is the given category.
 
     """
-
     examples = category_map[category]
     random.shuffle(examples)
     categories = set([str(k) for k in category_map.keys()])
