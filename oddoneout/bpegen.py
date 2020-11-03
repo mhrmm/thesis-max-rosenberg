@@ -61,7 +61,6 @@ class BpePuzzleGenerator(PuzzleGenerator):
             choices, _ = tok_puzzle
             one_hot_vec = []
             for choice in choices:
-                print(choice)
                 choice_vec_list = [one_hot(tok, self.vocab) for tok in choice]
                 if len(choice_vec_list) > (self.num_tok - 1):
                     summed = [sum(vec) for vec in zip(*choice_vec_list[self.num_tok-1:])]
@@ -82,9 +81,9 @@ class BpePuzzleGenerator(PuzzleGenerator):
             if not self.debugging:
                 index = np.random.permutation(num_choice)
             randomized = [puzzle[i] for i in index]
-            print(randomized)
             tok_puzzle = self.bpe.apply(randomized)
-            results.append(([word.split(" ") for word in tok_puzzle],index.tolist().index(0)))
+            results.append(([word.split(" ") for word in tok_puzzle],
+                            index.tolist().index(0)))
         return results 
 
     @staticmethod

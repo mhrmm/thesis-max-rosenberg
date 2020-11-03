@@ -33,6 +33,9 @@ class Taxonomy:
     def get_descendant_instances(self, node):
         raise NotImplementedError('Cannot call this method on abstract class.')
 
+    def get_descendants(self, node):
+        raise NotImplementedError('Cannot call this method on abstract class.')
+
 
 class Specificity:
     def __init__(self):
@@ -123,6 +126,15 @@ class GraphTaxonomy:
                 result |= self.get_descendant_instances(child)
             return result
 
+    def get_descendants(self, node):
+        """TODO: optimize!"""
+        if self.is_instance(node):
+            return {node}
+        else:
+            result = {node}
+            for child in self.get_children(node):
+                result |= self.get_descendants(child)
+            return result
 
 
 

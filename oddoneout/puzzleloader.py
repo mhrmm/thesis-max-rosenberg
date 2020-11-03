@@ -16,6 +16,7 @@ class PuzzleDataset(Dataset):
         puzzles = puzzle_generator.batch_generate(num_train)
         self.puzzle_generator = puzzle_generator
         self.response_vector = make_puzzle_targets([label for (_, label) in puzzles])
+        print('making puzzle matrix')
         self.evidence_matrix = self.puzzle_generator.make_puzzle_matrix(puzzles)
         self.vocab = puzzle_generator.get_vocab()
         
@@ -52,7 +53,7 @@ class PuzzleDataLoader:
 
     def _regenerate(self):
         self.train_data = PuzzleDataset(self.puzzle_generator, self.num_train)
-        self.train_loader = DataLoader(dataset = self.train_data, 
+        self.train_loader = DataLoader(dataset = self.train_data,
                                        batch_size = self.train_batch_size, 
                                        shuffle=True)
         self.test_data = PuzzleDataset(self.puzzle_generator, self.num_test)

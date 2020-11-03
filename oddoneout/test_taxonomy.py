@@ -54,6 +54,10 @@ class TestTaxonomy(unittest.TestCase):
         result = self.example.get_descendant_instances('fruit')
         assert result == {'lemon', 'orange', 'apple', 'peach'}
 
+    def test_get_descendants(self):
+        result = self.example.get_descendants('fruit')
+        assert result == {'lemon', 'orange', 'apple', 'peach', 'citrus', 'fruit'}
+
     def test_get_ancestor_categories(self):
         result = self.example.get_ancestor_categories('lemon')
         assert result == {'citrus', 'fruit', 'entity'}

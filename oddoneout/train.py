@@ -51,6 +51,7 @@ def train(num_epochs, config, data_loader, multigpu=False):
             print('Average time per epoch: {:.2} sec'.format(time_per_epoch))
 
     start_time = time.clock()
+    print('hi')
     net_factory = config.create_network_factory()
     model = net_factory(data_loader.input_size(), data_loader.output_size())
     if multigpu and torch.cuda.device_count() > 1:
